@@ -65,7 +65,7 @@ func _run() -> void:
 		return
 
 	var default_text := String(timeline_label.text)
-	if default_text.find("t0 event_warning") == -1:
+	if default_text.find("第0帧 事件预警") == -1:
 		_failures.append("default timeline should include unscaled tick marker")
 
 	zoom_select.select(2)
@@ -73,9 +73,9 @@ func _run() -> void:
 	await process_frame
 
 	var zoomed_text := String(timeline_label.text)
-	if zoomed_text.find("t0~4 event_warning x5") == -1:
+	if zoomed_text.find("第0~4帧 事件预警 x5") == -1:
 		_failures.append("zoomed timeline should aggregate first bucket")
-	if zoomed_text.find("t5~9 event_warning x5") == -1:
+	if zoomed_text.find("第5~9帧 事件预警 x5") == -1:
 		_failures.append("zoomed timeline should aggregate second bucket")
 
 	density_select.select(2)

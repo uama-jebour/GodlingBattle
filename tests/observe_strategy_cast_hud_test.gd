@@ -46,10 +46,12 @@ func _run() -> void:
 
 	screen.update_hud_for_tick(5, session_state.last_battle_result.get("log_entries", []))
 	var cast_text := String(screen.call("get_strategy_cast_text"))
-	if cast_text.find("strat_chill_wave") == -1:
+	if cast_text.find("寒潮冲击") == -1:
 		_failures.append("expected chill wave in cast hud text")
-	if cast_text.find("strat_nuclear_strike") == -1:
+	if cast_text.find("核击协议") == -1:
 		_failures.append("expected nuclear strike in cast hud text")
+	if cast_text.find("strat_") != -1:
+		_failures.append("cast hud should not expose strategy ids")
 
 	screen.update_hud_for_tick(6, session_state.last_battle_result.get("log_entries", []))
 	if String(screen.call("get_strategy_cast_text")) != "":

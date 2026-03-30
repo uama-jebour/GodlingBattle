@@ -1,0 +1,43 @@
+name: benchmark-gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Godot
+        uses: firebelley/setup-godot@v1
+        with:
+          version: 4.6.1
+          include-templates: false
+
+      - name: Resolve GODOT_BIN
+        shell: bash
+        run: |
+          if command -v godot >/dev/null 2>&1; then
+            echo "GODOT_BIN=$(command -v godot)" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          if command -v godot4 >/dev/null 2>&1; then
+            echo "GODOT_BIN=$(command -v godot4)" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "failed to resolve godot executable" >&2
+          exit 1
+
+      - name: Run benchmark gate
+        shell: bash
+        run: ./tools/run_benchmark_gate.sh

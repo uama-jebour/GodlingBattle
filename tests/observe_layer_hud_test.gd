@@ -39,10 +39,12 @@ func _run() -> void:
 		"tick": 12,
 		"event_id": "evt_hunter_fiend_arrival"
 	}])
-	if str(screen.get_tick_text()) != "Tick 12":
+	if str(screen.get_tick_text()) != "第12帧":
 		_failures.append("unexpected tick text")
-	if str(screen.get_event_text()).find("event_warning") == -1:
+	if str(screen.get_event_text()).find("事件预警") == -1:
 		_failures.append("missing event hint text")
+	if str(screen.get_event_text()).find("event_warning") != -1:
+		_failures.append("event text should not expose english event type")
 
 	_finish(screen)
 

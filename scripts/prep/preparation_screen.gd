@@ -4,6 +4,7 @@ const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 const DEFAULT_STRATEGY_BUDGET := 16
 const DEFAULT_ALLY_IDS := ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"]
 const VOID_ECHO_STRATEGY_ID := "strat_void_echo"
+const STRATEGY_CHECK_ICON_SIZE := 40
 
 var _current_selection: Dictionary = {
 	"hero_id": "hero_angel",
@@ -30,6 +31,8 @@ var _strategy_checkboxes: Dictionary = {}
 
 func _ready() -> void:
 	title_label.text = "出战前准备"
+	seed_input.prefix = "种子："
+	_apply_control_visual_emphasis()
 	_bind_content_options()
 	_bind_control_events()
 	_apply_selection_to_controls()
@@ -49,11 +52,11 @@ func _bind_content_options() -> void:
 	var content: Node = BATTLE_CONTENT.new()
 	hero_select.clear()
 	var hero: Dictionary = content.get_unit("hero_angel")
-	hero_select.add_item(String(hero.get("display_name", "英雄：天使")), 0)
+	hero_select.add_item("英雄：%s" % String(hero.get("display_name", "天使")), 0)
 	hero_select.set_item_metadata(0, "hero_angel")
 	battle_select.clear()
 	var battle: Dictionary = content.get_battle("battle_void_gate_alpha")
-	battle_select.add_item(String(battle.get("display_name", "虚无裂隙·一层")), 0)
+	battle_select.add_item("关卡：%s" % String(battle.get("display_name", "虚无裂隙·一层")), 0)
 	battle_select.set_item_metadata(0, "battle_void_gate_alpha")
 	_rebuild_strategy_options(content)
 	content.free()
@@ -112,6 +115,19 @@ func _rebuild_strategy_options(content: Node) -> void:
 		var checkbox := CheckBox.new()
 		checkbox.name = "Strategy_%s" % strategy_id
 		checkbox.text = "携带：%s（%d）" % [String(strategy.get("name", strategy_id)), int(strategy.get("cost", 0))]
+		checkbox.custom_minimum_size = Vector2(0, 80)
+		checkbox.add_theme_font_size_override("font_size", 40)
+		var checked_icon := _build_strategy_checkbox_icon(true)
+		var unchecked_icon := _build_strategy_checkbox_icon(false)
+		checkbox.add_theme_icon_override("checked", checked_icon)
+		checkbox.add_theme_icon_override("unchecked", unchecked_icon)
+		checkbox.add_theme_icon_override("checked_disabled", checked_icon)
+		checkbox.add_theme_icon_override("unchecked_disabled", unchecked_icon)
+		checkbox.add_theme_stylebox_override("normal", _build_block_style(Color(0.16, 0.2, 0.3, 0.9), Color(0.48, 0.59, 0.78), 2))
+		checkbox.add_theme_stylebox_override("hover", _build_block_style(Color(0.2, 0.26, 0.38, 0.95), Color(0.66, 0.79, 0.95), 2))
+		checkbox.add_theme_stylebox_override("pressed", _build_block_style(Color(0.24, 0.33, 0.5, 0.98), Color(0.79, 0.89, 1.0), 2))
+		checkbox.add_theme_stylebox_override("focus", _build_block_style(Color(0.21, 0.29, 0.46, 0.98), Color(0.95, 0.95, 0.95), 3))
+		checkbox.add_theme_color_override("font_color", Color(0.97, 0.97, 0.95))
 		checkbox.button_pressed = false
 		checkbox.toggled.connect(_on_strategy_toggled)
 		strategy_list.add_child(checkbox)
@@ -221,10 +237,14 @@ func _render_shell() -> void:
 	var current_selection := _current_selection.duplicate(true)
 	var setup := build_battle_setup(current_selection)
 	budget_label.text = "预算: %d / %d" % [_strategy_total_cost(current_selection), DEFAULT_STRATEGY_BUDGET]
+	if setup.has("invalid_reason"):
+		budget_label.modulate = Color(0.96, 0.39, 0.33)
+	else:
+		budget_label.modulate = Color(0.95, 0.94, 0.88)
 	selection_summary.text = _format_selection_summary(current_selection)
 	if setup.has("invalid_reason"):
 		var invalid_reason := _describe_invalid_reason(String(setup.get("invalid_reason", "")))
-		battle_summary.text = "战斗信息\n%s" % invalid_reason
+		battle_summary.text = "出战信息\n%s" % invalid_reason
 		error_label.text = invalid_reason
 		start_battle_button.disabled = true
 		return
@@ -243,17 +263,151 @@ func _strategy_total_cost(selection: Dictionary) -> int:
 
 
 func _format_selection_summary(current_selection: Dictionary) -> String:
-	var hero_id := _format_value(current_selection.get("hero_id", "未选择"))
-	var ally_ids := _format_array(current_selection.get("ally_ids", []))
-	var strategy_ids := _format_array(current_selection.get("strategy_ids", []))
-	var battle_id := _format_value(current_selection.get("battle_id", "未选择"))
-	return "英雄：%s\n队友：%s\n战技：%s\n关卡：%s" % [hero_id, ally_ids, strategy_ids, battle_id]
+	var content: Node = BATTLE_CONTENT.new()
+	var hero_name := _resolve_unit_name(content, String(current_selection.get("hero_id", "")))
+	var ally_names := _resolve_unit_names(content, current_selection.get("ally_ids", []))
+	var strategy_names := _resolve_strategy_names(content, current_selection.get("strategy_ids", []))
+	var battle_name := _resolve_battle_name(content, String(current_selection.get("battle_id", "")))
+	content.free()
+	return "构筑信息\n英雄：%s\n友军：%s\n战技：%s\n关卡：%s" % [
+		hero_name,
+		_format_array(ally_names),
+		_format_array(strategy_names),
+		battle_name
+	]
 
 
 func _format_battle_summary(setup: Dictionary) -> String:
-	var battle_id := _format_value(setup.get("battle_id", ""))
+	var content: Node = BATTLE_CONTENT.new()
+	var battle_name := _resolve_battle_name(content, String(setup.get("battle_id", "")))
+	content.free()
 	var seed := int(setup.get("seed", 0))
-	return "战斗准备完成\n关卡：%s\n种子：%d" % [battle_id, seed]
+	return "出战信息\n关卡：%s\n种子：%d" % [battle_name, seed]
+
+
+func _resolve_unit_name(content: Node, unit_id: String) -> String:
+	if unit_id.is_empty():
+		return "未选择"
+	var unit: Dictionary = content.get_unit(unit_id)
+	if unit.is_empty():
+		return unit_id
+	return String(unit.get("display_name", unit_id))
+
+
+func _resolve_unit_names(content: Node, unit_ids: Array) -> Array:
+	var names: Array = []
+	for unit_id in unit_ids:
+		names.append(_resolve_unit_name(content, String(unit_id)))
+	return names
+
+
+func _resolve_strategy_name(content: Node, strategy_id: String) -> String:
+	if strategy_id.is_empty():
+		return "未选择"
+	var strategy: Dictionary = content.get_strategy(strategy_id)
+	if strategy.is_empty():
+		return strategy_id
+	return String(strategy.get("name", strategy_id))
+
+
+func _resolve_strategy_names(content: Node, strategy_ids: Array) -> Array:
+	var names: Array = []
+	for strategy_id in strategy_ids:
+		names.append(_resolve_strategy_name(content, String(strategy_id)))
+	return names
+
+
+func _resolve_battle_name(content: Node, battle_id: String) -> String:
+	if battle_id.is_empty():
+		return "未选择"
+	var battle: Dictionary = content.get_battle(battle_id)
+	if battle.is_empty():
+		return battle_id
+	return String(battle.get("display_name", battle_id))
+
+
+func _apply_control_visual_emphasis() -> void:
+	var normal_style := _build_block_style(Color(0.16, 0.2, 0.29, 0.95), Color(0.43, 0.52, 0.66), 2)
+	var hover_style := _build_block_style(Color(0.2, 0.25, 0.37, 0.98), Color(0.58, 0.71, 0.9), 2)
+	var press_style := _build_block_style(Color(0.24, 0.31, 0.45, 1.0), Color(0.78, 0.89, 1.0), 2)
+	var focus_style := _build_block_style(Color(0.23, 0.31, 0.47, 1.0), Color(0.95, 0.95, 0.95), 3)
+
+	_apply_option_button_style(hero_select, normal_style, hover_style, press_style, focus_style)
+	_apply_option_button_style(battle_select, normal_style, hover_style, press_style, focus_style)
+
+	seed_input.add_theme_font_size_override("font_size", 40)
+	seed_input.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96))
+	var seed_line_edit := seed_input.get_line_edit()
+	if seed_line_edit != null:
+		seed_line_edit.custom_minimum_size = Vector2(0, 74)
+		seed_line_edit.add_theme_font_size_override("font_size", 40)
+		seed_line_edit.add_theme_stylebox_override("normal", normal_style.duplicate())
+		seed_line_edit.add_theme_stylebox_override("read_only", normal_style.duplicate())
+		seed_line_edit.add_theme_stylebox_override("focus", focus_style.duplicate())
+		seed_line_edit.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96))
+		seed_line_edit.add_theme_color_override("font_placeholder_color", Color(0.85, 0.87, 0.9))
+
+
+func _apply_option_button_style(option_button: OptionButton, normal_style: StyleBoxFlat, hover_style: StyleBoxFlat, press_style: StyleBoxFlat, focus_style: StyleBoxFlat) -> void:
+	option_button.add_theme_font_size_override("font_size", 42)
+	option_button.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96))
+	option_button.add_theme_stylebox_override("normal", normal_style.duplicate())
+	option_button.add_theme_stylebox_override("hover", hover_style.duplicate())
+	option_button.add_theme_stylebox_override("pressed", press_style.duplicate())
+	option_button.add_theme_stylebox_override("focus", focus_style.duplicate())
+	var popup := option_button.get_popup()
+	if popup != null:
+		popup.add_theme_font_size_override("font_size", 38)
+		popup.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96))
+		popup.add_theme_stylebox_override("panel", _build_block_style(Color(0.13, 0.17, 0.24, 0.98), Color(0.62, 0.75, 0.95), 2))
+		popup.add_theme_stylebox_override("hover", _build_block_style(Color(0.24, 0.32, 0.46, 1.0), Color(0.82, 0.9, 0.98), 1))
+		popup.add_theme_stylebox_override("separator", _build_block_style(Color(0.35, 0.44, 0.57, 0.9), Color(0.35, 0.44, 0.57), 0))
+
+
+func _build_block_style(bg_color: Color, border_color: Color, border_width: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_color = border_color
+	style.set_border_width_all(border_width)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_right = 8
+	style.corner_radius_bottom_left = 8
+	style.content_margin_left = 16.0
+	style.content_margin_top = 10.0
+	style.content_margin_right = 16.0
+	style.content_margin_bottom = 10.0
+	return style
+
+
+func _build_strategy_checkbox_icon(checked: bool) -> Texture2D:
+	var image := Image.create(STRATEGY_CHECK_ICON_SIZE, STRATEGY_CHECK_ICON_SIZE, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0.0, 0.0, 0.0, 0.0))
+	var bg_color := Color(0.15, 0.18, 0.24, 1.0)
+	if checked:
+		bg_color = Color(0.22, 0.45, 0.78, 1.0)
+	var border_color := Color(0.93, 0.95, 1.0, 1.0)
+	for y in range(STRATEGY_CHECK_ICON_SIZE):
+		for x in range(STRATEGY_CHECK_ICON_SIZE):
+			var is_border := x < 3 or y < 3 or x >= STRATEGY_CHECK_ICON_SIZE - 3 or y >= STRATEGY_CHECK_ICON_SIZE - 3
+			image.set_pixel(x, y, border_color if is_border else bg_color)
+	if checked:
+		var mark_color := Color(0.98, 0.99, 1.0, 1.0)
+		for offset in range(10):
+			_stamp_icon_pixel(image, 9 + offset, 20 + int(offset * 0.65), mark_color, 2)
+		for offset in range(17):
+			_stamp_icon_pixel(image, 18 + offset, 26 - int(offset * 0.82), mark_color, 2)
+	return ImageTexture.create_from_image(image)
+
+
+func _stamp_icon_pixel(image: Image, x: int, y: int, color: Color, radius: int) -> void:
+	for py in range(-radius, radius + 1):
+		for px in range(-radius, radius + 1):
+			var xx := x + px
+			var yy := y + py
+			if xx < 0 or yy < 0 or xx >= STRATEGY_CHECK_ICON_SIZE or yy >= STRATEGY_CHECK_ICON_SIZE:
+				continue
+			image.set_pixel(xx, yy, color)
 
 
 func _format_array(values: Array) -> String:
