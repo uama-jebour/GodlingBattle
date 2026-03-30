@@ -2,18 +2,36 @@
 
 ## 当前状态
 
-`GodlingBattle` 目前已经完成：
+`GodlingBattle` 已完成 Phase1-Phase5，当前主流程为：
 
-- 新项目目录与 Godot 项目骨架
-- 第一阶段主流程与基础测试
-- 第二阶段 runtime 加固（content/setup 驱动、事件分阶段、timeline 观战、结构化结果）
-- 第三阶段观战可读性增强（token 渲染、阵营分层、HUD、低血量样式）
-- 第四阶段 UI 产品化（准备/观战/结果页面可见化）
-- 第五阶段交互与回放增强（准备页交互控件、预算约束反馈、观战暂停/倍速、结果页再战）
+`出战前准备（可操作） -> 自动观战（可暂停/倍速） -> 结果结算（可再战/返回）`
 
-当前基线：
+整体进度：
 
-`phase5 交互与回放链路已打通（准备 -> 观战 -> 结果 -> 再战/返回）`
+- Phase1（项目骨架与主流程起步）：已完成
+- Phase2（runtime 加固与确定性）：已完成
+- Phase3（观战可读性增强）：已完成
+- Phase4（UI 产品化）：已完成
+- Phase5（交互与回放增强）：已完成
+- Phase6（下一阶段）：未开始
+
+## 本次改动（2026-03-30，已合并到 main）
+
+本次完成了 Phase5 全部任务：
+
+- 准备页新增交互控件：英雄/关卡/种子/战技开关
+- 新增预算反馈：超预算显示并禁用开始按钮
+- 观战页新增播放控制：暂停/继续 + 倍速（1x/2x/4x）
+- 结果页新增 `再战一场` 并重进 Observe
+- app flow smoke 扩展到 replay 分支
+- Phase5 计划文档与交接文档同步更新
+
+对应提交：`a8d75ae`（已 push 到 `origin/main`）
+
+## 验证结果（本次）
+
+- 全量测试：`tests/*.gd` 共 30 项，`30/30` 通过
+- 主仓状态：`main` 与 `origin/main` 对齐，工作区干净
 
 ## 当前唯一依据
 
@@ -27,23 +45,17 @@
 6. [2026-03-30-godlingbattle-phase4-ui-productization.md](./superpowers/plans/2026-03-30-godlingbattle-phase4-ui-productization.md)
 7. [2026-03-30-godlingbattle-phase5-interaction-replay.md](./superpowers/plans/2026-03-30-godlingbattle-phase5-interaction-replay.md)
 
-## 项目目标一句话
+## 下一阶段建议（Phase6）
 
-做一个独立于旧 `Godling` 的新 Godot 项目，持续打磨这条正式游戏风格主流程：
+建议优先推进三件事：
 
-`出战前准备（可操作） -> 自动观战（可暂停/倍速） -> 结果结算（可再战/返回）`
-
-## 明天最建议先做什么（下一阶段）
-
-建议从下一阶段（phase6）开始，优先做三件事：
-
-- 将准备页从“单项战技开关”升级为可扩展多战技选择组件
-- 增加观战进度条/拖拽跳帧能力，形成完整 replay 交互
-- 补齐 replay 分支在更长 timeline/更复杂事件下的稳定性回归
+1. 准备页从“单战技开关”升级为可扩展多战技选择组件
+2. 观战增加进度条/跳帧能力，形成完整 replay 操作闭环
+3. 增加长时间线与复杂事件组合下的稳定性回归测试
 
 ## 明天接着开工时可直接对 Codex 说的话
 
-`请先阅读 docs/HANDOFF.md、docs/项目概览.md、docs/实施计划导读.md，然后按 docs/superpowers/plans/2026-03-30-godlingbattle-phase5-interaction-replay.md 的未完成项继续执行。`
+`请先阅读 docs/HANDOFF.md、docs/项目概览.md、docs/实施计划导读.md，然后基于当前进度产出 phase6 实施计划并从 Task 1 开始执行。`
 
 ## 提醒
 

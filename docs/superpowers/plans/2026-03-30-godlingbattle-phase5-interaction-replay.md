@@ -1,6 +1,8 @@
 # GodlingBattle Phase 5 Interaction And Replay Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> Status (2026-03-30): completed and merged into `main` (`a8d75ae`).
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Upgrade the current visible loop into an actually operable game loop by adding interactive preparation controls, observe playback controls, and result-page replay action while preserving deterministic runtime behavior.
 
@@ -34,7 +36,7 @@ Core files for this phase:
 - Modify: `/Users/zhangwei/Documents/Mycode/GodlingBattle/scripts/prep/preparation_screen.gd`
 - Create: `/Users/zhangwei/Documents/Mycode/GodlingBattle/tests/preparation_controls_smoke_test.gd`
 
-- [ ] **Step 1: Write a failing preparation controls smoke test**
+- [x] **Step 1: Write a failing preparation controls smoke test**
 
 ```gdscript
 extends SceneTree
@@ -59,12 +61,12 @@ func _run() -> void:
 	quit(0)
 ```
 
-- [ ] **Step 2: Run it to confirm fail**
+- [x] **Step 2: Run it to confirm fail**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/preparation_controls_smoke_test.gd`  
 Expected: FAIL because interactive nodes do not exist yet
 
-- [ ] **Step 3: Add preparation input nodes to scene**
+- [x] **Step 3: Add preparation input nodes to scene**
 
 ```tscn
 [node name="HeroSelect" type="OptionButton" parent="Layout"]
@@ -89,7 +91,7 @@ layout_mode = 2
 text = "预算: 0 / 16"
 ```
 
-- [ ] **Step 4: Bind inputs and content options in preparation script**
+- [x] **Step 4: Bind inputs and content options in preparation script**
 
 ```gdscript
 @onready var hero_select: OptionButton = $Layout/HeroSelect
@@ -127,12 +129,12 @@ func _on_control_changed(_index: int) -> void:
 	_render_shell()
 ```
 
-- [ ] **Step 5: Re-run preparation controls smoke test**
+- [x] **Step 5: Re-run preparation controls smoke test**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/preparation_controls_smoke_test.gd`  
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git -C /Users/zhangwei/Documents/Mycode/GodlingBattle add scenes/prep/preparation_screen.tscn scripts/prep/preparation_screen.gd tests/preparation_controls_smoke_test.gd
@@ -145,7 +147,7 @@ git -C /Users/zhangwei/Documents/Mycode/GodlingBattle commit -m "feat: add inter
 - Modify: `/Users/zhangwei/Documents/Mycode/GodlingBattle/scripts/prep/preparation_screen.gd`
 - Create: `/Users/zhangwei/Documents/Mycode/GodlingBattle/tests/preparation_strategy_budget_test.gd`
 
-- [ ] **Step 1: Write a failing strategy-budget UI test**
+- [x] **Step 1: Write a failing strategy-budget UI test**
 
 ```gdscript
 extends SceneTree
@@ -176,12 +178,12 @@ func _run() -> void:
 	quit(0)
 ```
 
-- [ ] **Step 2: Run it to confirm fail**
+- [x] **Step 2: Run it to confirm fail**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/preparation_strategy_budget_test.gd`  
 Expected: FAIL before budget label/disable logic is synced with controls
 
-- [ ] **Step 3: Add budget projection and disable reasons to shell renderer**
+- [x] **Step 3: Add budget projection and disable reasons to shell renderer**
 
 ```gdscript
 func _render_shell() -> void:
@@ -209,7 +211,7 @@ func _strategy_total_cost(selection: Dictionary) -> int:
 	return total
 ```
 
-- [ ] **Step 4: Re-run budget test and preparation UI smoke tests**
+- [x] **Step 4: Re-run budget test and preparation UI smoke tests**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/preparation_strategy_budget_test.gd`  
 Expected: PASS
@@ -217,7 +219,7 @@ Expected: PASS
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/preparation_controls_smoke_test.gd`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git -C /Users/zhangwei/Documents/Mycode/GodlingBattle add scripts/prep/preparation_screen.gd tests/preparation_strategy_budget_test.gd
@@ -231,7 +233,7 @@ git -C /Users/zhangwei/Documents/Mycode/GodlingBattle commit -m "feat: enforce s
 - Modify: `/Users/zhangwei/Documents/Mycode/GodlingBattle/scripts/observe/observe_screen.gd`
 - Create: `/Users/zhangwei/Documents/Mycode/GodlingBattle/tests/observe_playback_controls_test.gd`
 
-- [ ] **Step 1: Write a failing observe playback control test**
+- [x] **Step 1: Write a failing observe playback control test**
 
 ```gdscript
 extends SceneTree
@@ -264,12 +266,12 @@ func _run() -> void:
 	quit(0)
 ```
 
-- [ ] **Step 2: Run it to confirm fail**
+- [x] **Step 2: Run it to confirm fail**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/observe_playback_controls_test.gd`  
 Expected: FAIL because playback control nodes do not exist yet
 
-- [ ] **Step 3: Add observe playback control nodes**
+- [x] **Step 3: Add observe playback control nodes**
 
 ```tscn
 [node name="PlaybackPanel" type="HBoxContainer" parent="."]
@@ -289,7 +291,7 @@ text = "暂停"
 layout_mode = 2
 ```
 
-- [ ] **Step 4: Implement pause/speed behavior in observe script**
+- [x] **Step 4: Implement pause/speed behavior in observe script**
 
 ```gdscript
 @onready var _pause_button: Button = $PlaybackPanel/PauseButton
@@ -320,7 +322,7 @@ func _process(delta: float) -> void:
 	# existing playback logic...
 ```
 
-- [ ] **Step 5: Re-run playback control and observe regressions**
+- [x] **Step 5: Re-run playback control and observe regressions**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/observe_playback_controls_test.gd`  
 Expected: PASS
@@ -331,7 +333,7 @@ Expected: PASS
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/observe_layer_hud_test.gd`  
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git -C /Users/zhangwei/Documents/Mycode/GodlingBattle add scenes/observe/observe_screen.tscn scripts/observe/observe_screen.gd tests/observe_playback_controls_test.gd
@@ -345,7 +347,7 @@ git -C /Users/zhangwei/Documents/Mycode/GodlingBattle commit -m "feat: add obser
 - Modify: `/Users/zhangwei/Documents/Mycode/GodlingBattle/scripts/result/result_screen.gd`
 - Create: `/Users/zhangwei/Documents/Mycode/GodlingBattle/tests/result_replay_flow_test.gd`
 
-- [ ] **Step 1: Write a failing result replay flow test**
+- [x] **Step 1: Write a failing result replay flow test**
 
 ```gdscript
 extends SceneTree
@@ -376,12 +378,12 @@ func _run() -> void:
 	quit(0)
 ```
 
-- [ ] **Step 2: Run it to confirm fail**
+- [x] **Step 2: Run it to confirm fail**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/result_replay_flow_test.gd`  
 Expected: FAIL because replay button does not exist yet
 
-- [ ] **Step 3: Add replay button and implement replay flow**
+- [x] **Step 3: Add replay button and implement replay flow**
 
 ```tscn
 [node name="ReplayButton" type="Button" parent="Layout"]
@@ -408,7 +410,7 @@ func replay_last_setup() -> void:
 		app_router.goto_observe()
 ```
 
-- [ ] **Step 4: Re-run replay and result regressions**
+- [x] **Step 4: Re-run replay and result regressions**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/result_replay_flow_test.gd`  
 Expected: PASS
@@ -419,7 +421,7 @@ Expected: PASS
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/result_screen_test.gd`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git -C /Users/zhangwei/Documents/Mycode/GodlingBattle add scenes/result/result_screen.tscn scripts/result/result_screen.gd tests/result_replay_flow_test.gd
@@ -432,7 +434,7 @@ git -C /Users/zhangwei/Documents/Mycode/GodlingBattle commit -m "feat: add resul
 - Modify: `/Users/zhangwei/Documents/Mycode/GodlingBattle/tests/app_flow_smoke_test.gd`
 - Modify: `/Users/zhangwei/Documents/Mycode/GodlingBattle/docs/HANDOFF.md`
 
-- [ ] **Step 1: Extend app flow smoke with replay branch**
+- [x] **Step 1: Extend app flow smoke with replay branch**
 
 ```gdscript
 # after reaching result screen
@@ -444,12 +446,12 @@ assert(observe_again != null)
 assert(observe_again.name == "ObserveScreen")
 ```
 
-- [ ] **Step 2: Run app flow smoke to verify pass**
+- [x] **Step 2: Run app flow smoke to verify pass**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/app_flow_smoke_test.gd`  
 Expected: PASS
 
-- [ ] **Step 3: Run focused phase5 regression bundle**
+- [x] **Step 3: Run focused phase5 regression bundle**
 
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/preparation_controls_smoke_test.gd`  
 Expected: PASS
@@ -463,7 +465,7 @@ Expected: PASS
 Run: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/zhangwei/Documents/Mycode/GodlingBattle --script res://tests/result_replay_flow_test.gd`  
 Expected: PASS
 
-- [ ] **Step 4: Update handoff to phase5 baseline**
+- [x] **Step 4: Update handoff to phase5 baseline**
 
 ```md
 ## 当前状态
@@ -474,12 +476,18 @@ Expected: PASS
 直接从 `docs/superpowers/plans/2026-03-30-godlingbattle-phase5-interaction-replay.md` 的当前未完成 Task 开始。
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git -C /Users/zhangwei/Documents/Mycode/GodlingBattle add tests/app_flow_smoke_test.gd docs/HANDOFF.md
 git -C /Users/zhangwei/Documents/Mycode/GodlingBattle commit -m "docs: refresh handoff for phase5 interaction"
 ```
+
+## Execution Result (2026-03-30)
+
+- All tasks in this plan were completed and merged to `main`.
+- Final merge commit: `a8d75ae`.
+- Full regression run: `tests/*.gd` => `30/30` pass.
 
 ## Self-Review
 
