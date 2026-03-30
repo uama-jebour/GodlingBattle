@@ -1,6 +1,7 @@
 extends RefCounted
 
 const DISPLAY_NAME_RESOLVER := preload("res://scripts/ui/display_name_resolver.gd")
+const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 
 const EMPTY_BRIEF_TEXT := "本帧动态：暂无关键事件"
 const EMPTY_DETAIL_TEXT := "暂无战术明细"
@@ -65,7 +66,7 @@ func _build_brief_line(row: Dictionary, tick: int) -> String:
 		"strategy_cast":
 			return "第%d帧战技施放：%s" % [tick, _resolver.strategy_name(str(row.get("strategy_id", "")))]
 		"event_warning":
-			return "第%d帧事件预警：%s" % [tick, _resolver.event_name(str(row.get("event_id", "")))]
+			return "第%d帧事件预警：%s（%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _warning_countdown_text(row)]
 		"event_resolve":
 			return "第%d帧事件结算：%s（%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _responded_text(row)]
 		"event_unresolved_effect":
@@ -88,9 +89,9 @@ func _build_detail_line(row: Dictionary, tick: int) -> String:
 	var event_type := str(row.get("type", ""))
 	match event_type:
 		"strategy_cast":
-			return "第%d帧释放战技：%s" % [tick, _resolver.strategy_name(str(row.get("strategy_id", "")))]
+			return "第%d帧释放战技：%s（施放）" % [tick, _resolver.strategy_name(str(row.get("strategy_id", "")))]
 		"event_warning":
-			return "第%d帧收到事件预警：%s" % [tick, _resolver.event_name(str(row.get("event_id", "")))]
+			return "第%d帧收到事件预警：%s（%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _warning_countdown_text(row)]
 		"event_resolve":
 			return "第%d帧结算事件：%s（%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _responded_text(row)]
 		"event_unresolved_effect":
@@ -111,3 +112,22 @@ func _build_detail_line(row: Dictionary, tick: int) -> String:
 
 func _responded_text(row: Dictionary) -> String:
 	return "已响应" if bool(row.get("responded", false)) else "未响应"
+
+
+func _warning_countdown_text(row: Dictionary) -> String:
+	var seconds := _warning_seconds(row)
+	if seconds <= 0:
+		return "即将出现"
+	return "%d秒后" % seconds
+
+
+func _warning_seconds(row: Dictionary) -> int:
+	if row.has("warning_seconds"):
+		return maxi(0, int(round(float(row.get("warning_seconds", 0.0)))))
+	var event_id := str(row.get("event_id", ""))
+	if event_id.is_empty():
+		return 0
+	var content := BATTLE_CONTENT.new()
+	var event_def: Dictionary = content.get_event(event_id)
+	content.free()
+	return maxi(0, int(round(float(event_def.get("warning_seconds", 0.0)))))

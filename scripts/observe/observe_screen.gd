@@ -3,12 +3,15 @@ extends Control
 const RUNNER := preload("res://scripts/battle_runtime/battle_runner.gd")
 const TOKEN_VIEW_SCENE := preload("res://scenes/observe/token_view.tscn")
 const BATTLE_MAP_SCENE := preload("res://scenes/observe/battle_map_view.tscn")
+const STRATEGY_CARD_SCENE := preload("res://scenes/observe/strategy_card_view.tscn")
 const BATTLEFIELD_LAYOUT_SOLVER := preload("res://scripts/observe/battlefield_layout_solver.gd")
 const DISPLAY_NAME_RESOLVER := preload("res://scripts/ui/display_name_resolver.gd")
 const BATTLE_REPORT_FORMATTER := preload("res://scripts/observe/battle_report_formatter.gd")
+const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 const FRAME_STEP_SECONDS := 0.05
 const JUMP_FRAME_DELTA := 10
 const DEATH_MARKER_LINGER_TICKS := 12
+const DEFAULT_TICK_RATE := 10.0
 
 var _timeline: Array = []
 var _frame_index := 0
@@ -33,6 +36,11 @@ var _battle_map: Control
 var _battlefield_layout_solver := BATTLEFIELD_LAYOUT_SOLVER.new()
 var _display_name_resolver := DISPLAY_NAME_RESOLVER.new()
 var _battle_report_formatter := BATTLE_REPORT_FORMATTER.new()
+var _strategy_card_host: HBoxContainer
+var _strategy_card_views: Dictionary = {}
+var _ally_roster_label: Label
+var _enemy_roster_label: Label
+var _battle_log_text_label: RichTextLabel
 var _prev_hp_by_entity: Dictionary = {}
 var _death_marker_until_tick: Dictionary = {}
 @onready var _pause_button: Button = $PlaybackPanel/PauseButton
@@ -60,6 +68,9 @@ func _ready() -> void:
 	_bind_playback_controls()
 	_bind_event_filter_controls()
 	_bind_battle_report_controls()
+	_ensure_strategy_card_host()
+	_ensure_alive_roster_panel()
+	_ensure_battle_log_panel()
 	_detail_log_expanded = false
 	_refresh_detail_log_visibility()
 	var session_state := _session_state()
@@ -72,6 +83,9 @@ func _ready() -> void:
 		_refresh_detail_log(_current_tick, _event_rows)
 		_refresh_progress_slider()
 		_refresh_playback_controls()
+		_refresh_strategy_cards(_display_tick())
+		_refresh_alive_roster_panel()
+		_refresh_battle_log_panel()
 		return
 	if session_state.last_timeline.is_empty():
 		play_battle(session_state.battle_setup)
@@ -96,6 +110,9 @@ func _ready() -> void:
 	_refresh_detail_log(_current_tick, _event_rows)
 	_refresh_progress_slider()
 	_refresh_playback_controls()
+	_refresh_strategy_cards(_display_tick())
+	_refresh_alive_roster_panel()
+	_refresh_battle_log_panel()
 	if _is_playing:
 		set_process(true)
 	else:
@@ -433,6 +450,9 @@ func update_hud_for_tick(tick: int, event_rows: Array) -> void:
 	_refresh_tick_summary(tick, event_rows)
 	_refresh_detail_log(tick, event_rows)
 	_refresh_battle_overview()
+	_refresh_strategy_cards(tick)
+	_refresh_alive_roster_panel()
+	_refresh_battle_log_panel()
 
 
 func get_tick_text() -> String:
@@ -448,6 +468,18 @@ func get_event_text() -> String:
 func get_strategy_cast_text() -> String:
 	_ensure_hud()
 	return _strategy_cast_label.text
+
+
+func get_alive_roster_text() -> String:
+	var sections := _build_alive_roster_sections()
+	return "我方\n%s\n敌方\n%s" % [
+		_roster_lines_text(sections.get("ally", [])),
+		_roster_lines_text(sections.get("enemy", []))
+	]
+
+
+func get_battle_log_text() -> String:
+	return "\n".join(PackedStringArray(_build_battle_log_lines()))
 
 
 func get_event_timeline_text() -> String:
@@ -676,6 +708,89 @@ func _layer_for_side(side: String) -> Control:
 	return _ally_layer
 
 
+func _ensure_strategy_card_host() -> void:
+	if _strategy_card_host != null:
+		return
+	var strategy_panel := get_node_or_null("LayoutRoot/LeftColumn/StrategyPanel") as VBoxContainer
+	if strategy_panel == null:
+		return
+	var hint_label := get_node_or_null("LayoutRoot/LeftColumn/StrategyPanel/StrategyHint") as Label
+	if hint_label != null:
+		hint_label.visible = false
+	_strategy_card_host = HBoxContainer.new()
+	_strategy_card_host.name = "StrategyCardHost"
+	_strategy_card_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_strategy_card_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_strategy_card_host.add_theme_constant_override("separation", 10)
+	strategy_panel.add_child(_strategy_card_host)
+
+
+func _ensure_alive_roster_panel() -> void:
+	if _ally_roster_label != null and _enemy_roster_label != null:
+		return
+	var panel := get_node_or_null("LayoutRoot/RightColumn/AliveRosterPanel") as VBoxContainer
+	if panel == null:
+		return
+	var hint_label := get_node_or_null("LayoutRoot/RightColumn/AliveRosterPanel/RosterHint") as Label
+	if hint_label != null:
+		hint_label.visible = false
+	var columns := HBoxContainer.new()
+	columns.name = "AliveRosterColumns"
+	columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	columns.add_theme_constant_override("separation", 16)
+	panel.add_child(columns)
+	var ally_column := _build_roster_column("我方")
+	var enemy_column := _build_roster_column("敌方")
+	columns.add_child(ally_column.get("column"))
+	columns.add_child(enemy_column.get("column"))
+	_ally_roster_label = ally_column.get("body")
+	_enemy_roster_label = enemy_column.get("body")
+
+
+func _build_roster_column(title: String) -> Dictionary:
+	var column := VBoxContainer.new()
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_theme_constant_override("separation", 6)
+	var heading := Label.new()
+	heading.text = title
+	heading.add_theme_font_size_override("font_size", 18)
+	column.add_child(heading)
+	var body := Label.new()
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_font_size_override("font_size", 16)
+	body.text = "暂无"
+	column.add_child(body)
+	return {
+		"column": column,
+		"body": body
+	}
+
+
+func _ensure_battle_log_panel() -> void:
+	if _battle_log_text_label != null:
+		return
+	var panel := get_node_or_null("LayoutRoot/RightColumn/BattleLogPanel") as VBoxContainer
+	if panel == null:
+		return
+	var hint_label := get_node_or_null("LayoutRoot/RightColumn/BattleLogPanel/BattleLogHint") as Label
+	if hint_label != null:
+		hint_label.visible = false
+	_battle_log_text_label = RichTextLabel.new()
+	_battle_log_text_label.name = "BattleLogRichText"
+	_battle_log_text_label.bbcode_enabled = false
+	_battle_log_text_label.fit_content = false
+	_battle_log_text_label.scroll_active = true
+	_battle_log_text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_battle_log_text_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_battle_log_text_label.custom_minimum_size = Vector2(0, 180)
+	_battle_log_text_label.add_theme_font_size_override("normal_font_size", 18)
+	panel.add_child(_battle_log_text_label)
+
+
 func _refresh_event_timeline() -> void:
 	if _event_timeline_label == null:
 		return
@@ -785,6 +900,104 @@ func _build_strategy_cast_text(tick: int, rows: Array) -> String:
 	return "战技施放：%s" % " | ".join(strategy_ids)
 
 
+func _refresh_strategy_cards(tick: int) -> void:
+	_ensure_strategy_card_host()
+	if _strategy_card_host == null:
+		return
+	var states := _build_strategy_card_states(tick)
+	var active_ids: Dictionary = {}
+	for state in states:
+		var strategy_id := str(state.get("strategy_id", ""))
+		if strategy_id.is_empty():
+			continue
+		active_ids[strategy_id] = true
+		var card: Node = _strategy_card_views.get(strategy_id, null)
+		if card == null:
+			card = STRATEGY_CARD_SCENE.instantiate()
+			_strategy_card_host.add_child(card)
+			_strategy_card_views[strategy_id] = card
+		card.call("apply_state", state)
+	for strategy_id in _strategy_card_views.keys():
+		if active_ids.has(strategy_id):
+			continue
+		var stale: Node = _strategy_card_views[strategy_id]
+		if stale != null and is_instance_valid(stale):
+			stale.queue_free()
+		_strategy_card_views.erase(strategy_id)
+	var hint_label := get_node_or_null("LayoutRoot/LeftColumn/StrategyPanel/StrategyHint") as Label
+	if hint_label != null:
+		hint_label.visible = states.is_empty()
+		if states.is_empty():
+			hint_label.text = "暂无可展示战技"
+
+
+func _build_strategy_card_states(tick: int) -> Array:
+	var session_state := _session_state()
+	if session_state == null:
+		return []
+	var battle_setup: Dictionary = session_state.battle_setup
+	if battle_setup.is_empty():
+		return []
+	var states: Array = []
+	for raw_strategy_id in battle_setup.get("strategy_ids", []):
+		var strategy_id := str(raw_strategy_id)
+		if strategy_id.is_empty():
+			continue
+		var cooldown_total := _strategy_cooldown_seconds(strategy_id)
+		var last_cast_tick := _last_cast_tick_for_strategy(strategy_id, tick)
+		var elapsed_since_cast := 0.0
+		if last_cast_tick >= 0:
+			elapsed_since_cast = maxf(0.0, float(tick - last_cast_tick) / DEFAULT_TICK_RATE)
+		var remaining := 0.0
+		if last_cast_tick >= 0 and cooldown_total > 0.0:
+			remaining = maxf(0.0, cooldown_total - elapsed_since_cast)
+		var ratio := 1.0
+		if cooldown_total > 0.0:
+			ratio = clampf(1.0 - (remaining / cooldown_total), 0.0, 1.0)
+		states.append({
+			"strategy_id": strategy_id,
+			"name": _strategy_display_name(strategy_id),
+			"cooldown_total_seconds": cooldown_total,
+			"cooldown_remaining_seconds": remaining,
+			"cooldown_ratio": ratio,
+			"triggered": _is_strategy_triggered_at_tick(strategy_id, tick)
+		})
+	return states
+
+
+func _strategy_cooldown_seconds(strategy_id: String) -> float:
+	if strategy_id.is_empty():
+		return 0.0
+	var content := BATTLE_CONTENT.new()
+	var strategy_def: Dictionary = content.get_strategy(strategy_id)
+	content.free()
+	return maxf(0.0, float(strategy_def.get("cooldown", 0.0)))
+
+
+func _last_cast_tick_for_strategy(strategy_id: String, current_tick: int) -> int:
+	var last_tick := -1
+	for row in _event_rows:
+		if int(row.get("tick", -1)) > current_tick:
+			continue
+		if str(row.get("type", "")) != "strategy_cast":
+			continue
+		if str(row.get("strategy_id", "")) != strategy_id:
+			continue
+		last_tick = int(row.get("tick", -1))
+	return last_tick
+
+
+func _is_strategy_triggered_at_tick(strategy_id: String, tick: int) -> bool:
+	for row in _event_rows:
+		if int(row.get("tick", -1)) != tick:
+			continue
+		if str(row.get("type", "")) != "strategy_cast":
+			continue
+		if str(row.get("strategy_id", "")) == strategy_id:
+			return true
+	return false
+
+
 func _refresh_battle_overview() -> void:
 	if _battle_overview_label == null:
 		return
@@ -868,6 +1081,80 @@ func _refresh_detail_log_visibility() -> void:
 		return
 	_detail_toggle_button.text = "收起战术明细（最近12条）" if _detail_log_expanded else "展开战术明细（最近12条）"
 	_detail_log_list.visible = _detail_log_expanded
+
+
+func _refresh_alive_roster_panel() -> void:
+	_ensure_alive_roster_panel()
+	if _ally_roster_label == null or _enemy_roster_label == null:
+		return
+	var sections := _build_alive_roster_sections()
+	_ally_roster_label.text = _roster_lines_text(sections.get("ally", []))
+	_enemy_roster_label.text = _roster_lines_text(sections.get("enemy", []))
+
+
+func _build_alive_roster_sections() -> Dictionary:
+	var ally_lines: Array[String] = []
+	var enemy_lines: Array[String] = []
+	for entity in _panel_entities():
+		if not bool(entity.get("alive", false)):
+			continue
+		var side := str(entity.get("side", ""))
+		var line := "%s %s" % [_entity_display_name(entity), _entity_hp_text(entity)]
+		if side == "enemy":
+			enemy_lines.append(line)
+		else:
+			ally_lines.append(line)
+	return {
+		"ally": ally_lines,
+		"enemy": enemy_lines
+	}
+
+
+func _panel_entities() -> Array:
+	if not _current_entities.is_empty():
+		return _current_entities
+	if _timeline.is_empty():
+		return []
+	var first_frame := _timeline[0] as Dictionary
+	return first_frame.get("entities", [])
+
+
+func _entity_display_name(entity: Dictionary) -> String:
+	var display_name := str(entity.get("display_name", ""))
+	if not display_name.is_empty():
+		return display_name
+	return _unit_display_name_from_entity_id(str(entity.get("entity_id", "")))
+
+
+func _entity_hp_text(entity: Dictionary) -> String:
+	var hp := int(round(float(entity.get("hp", 0.0))))
+	var max_hp := int(round(float(entity.get("max_hp", 0.0))))
+	if max_hp <= 0:
+		return "%d" % hp
+	return "%d/%d" % [hp, max_hp]
+
+
+func _roster_lines_text(lines: Array) -> String:
+	if lines.is_empty():
+		return "暂无"
+	return "\n".join(PackedStringArray(lines))
+
+
+func _refresh_battle_log_panel() -> void:
+	_ensure_battle_log_panel()
+	if _battle_log_text_label == null:
+		return
+	_battle_log_text_label.text = get_battle_log_text()
+
+
+func _build_battle_log_lines(limit: int = 18) -> Array[String]:
+	return _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
+
+
+func _display_tick() -> int:
+	if _current_frame_index >= 0 or _timeline.is_empty():
+		return _current_tick
+	return int((_timeline[0] as Dictionary).get("tick", _current_tick))
 
 
 func _build_event_row_text(row: Dictionary) -> String:
