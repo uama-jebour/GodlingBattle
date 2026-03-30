@@ -12,7 +12,7 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 		return {"invalid_reason": "missing_hero"}
 	if ally_ids.size() != 3:
 		return {"invalid_reason": "invalid_ally_count"}
-	if battle_id.is_empty():
+	if battle_id.is_empty() or BattleContent.get_battle(battle_id).is_empty():
 		return {"invalid_reason": "missing_battle"}
 	var total_cost := 0
 	for strategy_id in strategy_ids:

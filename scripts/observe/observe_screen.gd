@@ -1,11 +1,14 @@
 extends Control
 
 const RUNNER := preload("res://scripts/battle_runtime/battle_runner.gd")
+const FRAME_STEP_SECONDS := 0.05
 
 var _timeline: Array = []
 var _frame_index := 0
 var _current_tick := 0
 var _current_entities: Array = []
+var _playback_accumulator := 0.0
+var _is_playing := false
 
 
 func _ready() -> void:
@@ -15,7 +18,26 @@ func _ready() -> void:
 		play_battle(SessionState.battle_setup)
 	_timeline = SessionState.last_timeline.duplicate(true)
 	_frame_index = 0
-	_play_timeline()
+	_playback_accumulator = 0.0
+	_is_playing = not _timeline.is_empty()
+	if _is_playing:
+		set_process(true)
+	else:
+		AppRouter.goto_result()
+
+
+func _process(delta: float) -> void:
+	if not _is_playing:
+		return
+	_playback_accumulator += delta
+	if _playback_accumulator < FRAME_STEP_SECONDS:
+		return
+	_playback_accumulator = 0.0
+	var finished := advance_playback_step()
+	if finished:
+		_is_playing = false
+		set_process(false)
+		AppRouter.goto_result()
 
 
 func play_battle(setup: Dictionary) -> void:
@@ -41,12 +63,13 @@ func build_token_snapshot() -> Array:
 	return rows
 
 
-func _play_timeline() -> void:
-	while _frame_index < _timeline.size():
-		var frame = _timeline[_frame_index]
-		apply_timeline_frame(frame)
-		_frame_index += 1
-	AppRouter.goto_result()
+func advance_playback_step() -> bool:
+	if _frame_index >= _timeline.size():
+		return true
+	var frame = _timeline[_frame_index]
+	apply_timeline_frame(frame)
+	_frame_index += 1
+	return _frame_index >= _timeline.size()
 
 
 func _hp_ratio(entity: Dictionary) -> float:

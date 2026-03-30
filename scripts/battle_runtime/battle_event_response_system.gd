@@ -21,7 +21,7 @@ func tick(state: Dictionary) -> void:
 		var stage := str(runtime.get("stage", "idle"))
 		if stage == "done":
 			continue
-		if stage == "idle" and _should_warn(event_def, tick_now):
+		if stage == "idle" and _should_warn(event_def, state, tick_now):
 			runtime["stage"] = "warning"
 			runtime["warning_tick"] = tick_now
 			state["log_entries"].append({
@@ -56,14 +56,15 @@ func tick(state: Dictionary) -> void:
 	state["event_runtime"] = event_runtime
 
 
-func _should_warn(_event_def: Dictionary, tick_now: int) -> bool:
-	return tick_now == 5
+func _should_warn(event_def: Dictionary, state: Dictionary, tick_now: int) -> bool:
+	var trigger_def: Dictionary = event_def.get("trigger_def", {})
+	return _trigger_matches(trigger_def, state, tick_now)
 
 
 func _warning_duration_ticks(event_def: Dictionary, state: Dictionary) -> int:
 	var warning_seconds := float(event_def.get("warning_seconds", 0.0))
 	var tick_rate := int(state.get("tick_rate", 10))
-	return clampi(max(1, int(round(warning_seconds * float(tick_rate)))), 1, 3)
+	return max(1, int(round(warning_seconds * float(tick_rate))))
 
 
 func _check_response(event_def: Dictionary, state: Dictionary, tick_now: int) -> bool:
@@ -82,4 +83,34 @@ func _check_response(event_def: Dictionary, state: Dictionary, tick_now: int) ->
 			"tick": tick_now
 		})
 		return true
+	return false
+
+
+func _trigger_matches(trigger_def: Dictionary, state: Dictionary, tick_now: int) -> bool:
+	var trigger_type := str(trigger_def.get("type", ""))
+	if trigger_type == "any":
+		for rule in trigger_def.get("rules", []):
+			if _rule_matches(rule, state, tick_now):
+				return true
+		return false
+	return _rule_matches(trigger_def, state, tick_now)
+
+
+func _rule_matches(rule: Dictionary, state: Dictionary, tick_now: int) -> bool:
+	var rule_type := str(rule.get("type", ""))
+	if rule_type == "elapsed_gte":
+		var threshold_seconds := float(rule.get("value", 0.0))
+		var tick_rate := int(state.get("tick_rate", 10))
+		var elapsed_seconds := float(tick_now) / float(tick_rate)
+		return elapsed_seconds >= threshold_seconds
+	if rule_type == "ally_hp_ratio_lte":
+		var threshold := float(rule.get("value", 0.0))
+		for entity in state.get("entities", []):
+			if str(entity.get("side", "")) != "ally":
+				continue
+			var max_hp := maxf(float(entity.get("max_hp", 1.0)), 1.0)
+			var hp_ratio := float(entity.get("hp", 0.0)) / max_hp
+			if hp_ratio <= threshold:
+				return true
+		return false
 	return false

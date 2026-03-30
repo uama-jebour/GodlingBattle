@@ -4,6 +4,7 @@ const STATE := preload("res://scripts/battle_runtime/battle_state.gd")
 const AI := preload("res://scripts/battle_runtime/battle_ai_system.gd")
 const COMBAT := preload("res://scripts/battle_runtime/battle_combat_system.gd")
 const EVENTS := preload("res://scripts/battle_runtime/battle_event_response_system.gd")
+const CONTENT := preload("res://autoload/battle_content.gd")
 
 var _state := STATE.new()
 var _ai := AI.new()
@@ -12,6 +13,10 @@ var _events := EVENTS.new()
 
 
 func run(setup: Dictionary) -> Dictionary:
+	var invalid_reason := _validate_setup(setup)
+	if not invalid_reason.is_empty():
+		return _build_invalid_payload(invalid_reason)
+
 	var state := _state.initialize(setup)
 	var timeline: Array = []
 	while not bool(state.get("completed", false)):
@@ -69,5 +74,48 @@ func run(setup: Dictionary) -> Dictionary:
 			"triggered_events": state.get("triggered_events", []).duplicate(true),
 			"triggered_strategies": state.get("triggered_strategies", []).duplicate(true),
 			"log_entries": state.get("log_entries", []).duplicate(true)
+		}
+	}
+
+
+func _validate_setup(setup: Dictionary) -> String:
+	var content: Node = CONTENT.new()
+	var hero_id := str(setup.get("hero_id", ""))
+	if hero_id.is_empty() or content.get_unit(hero_id).is_empty():
+		content.free()
+		return "missing_hero"
+	var ally_ids: Array = setup.get("ally_ids", [])
+	if ally_ids.size() != 3:
+		content.free()
+		return "invalid_ally_count"
+	for ally_id in ally_ids:
+		if content.get_unit(str(ally_id)).is_empty():
+			content.free()
+			return "missing_ally"
+	for strategy_id in setup.get("strategy_ids", []):
+		if content.get_strategy(str(strategy_id)).is_empty():
+			content.free()
+			return "missing_strategy"
+	var battle_id := str(setup.get("battle_id", ""))
+	if battle_id.is_empty() or content.get_battle(battle_id).is_empty():
+		content.free()
+		return "missing_battle"
+	content.free()
+	return ""
+
+
+func _build_invalid_payload(reason: String) -> Dictionary:
+	return {
+		"timeline": [],
+		"result": {
+			"status": "invalid_setup",
+			"victory": false,
+			"defeat_reason": reason,
+			"elapsed_seconds": 0.0,
+			"survivors": [],
+			"casualties": [],
+			"triggered_events": [],
+			"triggered_strategies": [],
+			"log_entries": []
 		}
 	}
