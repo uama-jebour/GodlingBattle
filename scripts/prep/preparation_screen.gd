@@ -2,7 +2,7 @@ extends Control
 
 const DEFAULT_STRATEGY_BUDGET := 16
 
-var selection: Dictionary = {
+var _current_selection: Dictionary = {
 	"hero_id": "hero_angel",
 	"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
 	"strategy_ids": ["strat_void_echo"],
@@ -23,6 +23,12 @@ func _ready() -> void:
 	if not start_battle_button.pressed.is_connected(_on_start_pressed):
 		start_battle_button.pressed.connect(_on_start_pressed)
 	_render_shell()
+
+
+func set_selection(selection: Dictionary) -> void:
+	_current_selection = selection.duplicate(true)
+	if is_node_ready():
+		_render_shell()
 
 
 func build_battle_setup(selection: Dictionary) -> Dictionary:
@@ -65,7 +71,7 @@ func start_battle(selection: Dictionary) -> void:
 
 
 func _render_shell() -> void:
-	var current_selection := selection.duplicate(true)
+	var current_selection := _current_selection.duplicate(true)
 	var setup := build_battle_setup(current_selection)
 	selection_summary.text = _format_selection_summary(current_selection)
 	if setup.has("invalid_reason"):
@@ -124,7 +130,7 @@ func _describe_invalid_reason(invalid_reason: String) -> String:
 
 
 func _on_start_pressed() -> void:
-	start_battle(selection)
+	start_battle(_current_selection)
 
 
 func _session_state() -> Node:
