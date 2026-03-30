@@ -505,6 +505,7 @@ func _visual_flags_from_snapshot(row: Dictionary) -> Dictionary:
 
 func _death_marker_expiry_tick(entity_id: String, is_dead: bool) -> int:
 	if not is_dead:
+		_death_marker_until_tick.erase(entity_id)
 		return -1
 	if _death_marker_until_tick.has(entity_id):
 		return int(_death_marker_until_tick[entity_id])
@@ -551,11 +552,19 @@ func _has_tick_effect(entity_id: String, tick: int) -> bool:
 	for row in _event_rows:
 		if int(row.get("tick", -1)) != tick:
 			continue
-		var row_type := str(row.get("type", ""))
-		if row_type in ["strategy_cast", "event_warning", "event_resolve", "event_unresolved_effect"]:
+		if _row_targets_entity(row, entity_id):
 			return true
-		if row_type in ["ally_down", "hero_down", "enemy_down"] and str(row.get("entity_id", "")) == entity_id:
-			return true
+	return false
+
+
+func _row_targets_entity(row: Dictionary, entity_id: String) -> bool:
+	if str(row.get("entity_id", "")) == entity_id:
+		return true
+	var target_ids = row.get("entity_ids", [])
+	if target_ids is Array:
+		for candidate in target_ids:
+			if str(candidate) == entity_id:
+				return true
 	return false
 
 
