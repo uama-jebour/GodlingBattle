@@ -7,12 +7,21 @@ const COLOR_BG := Color(0.08, 0.1, 0.14, 0.86)
 const COLOR_HP_BG := Color(0.17, 0.2, 0.24, 0.95)
 const COLOR_HP_FILL := Color(0.42, 0.89, 0.52, 0.95)
 const COLOR_HP_LOW := Color(0.92, 0.3, 0.24, 0.95)
+const COLOR_HIT_FLASH := Color(1.0, 0.22, 0.22, 0.22)
+const COLOR_EFFECT_RING := Color(0.55, 0.86, 1.0, 0.9)
+const COLOR_DEAD_OVERLAY := Color(0.02, 0.03, 0.04, 0.38)
+const COLOR_DEATH_MARKER := Color(1.0, 0.82, 0.82, 1.0)
 
 var entity_id := ""
 var display_name := ""
 var hp_ratio := 1.0
 var side := ""
 var world_position := Vector2.ZERO
+var is_hit := false
+var is_affected := false
+var is_dead := false
+var show_death_marker_until_tick := -1
+var _visual_tick := -1
 
 
 func apply_snapshot(snapshot: Dictionary) -> void:
@@ -24,6 +33,19 @@ func apply_snapshot(snapshot: Dictionary) -> void:
 	position = world_position
 	size = custom_minimum_size
 	queue_redraw()
+
+
+func set_visual_flags(flags: Dictionary) -> void:
+	is_hit = bool(flags.get("is_hit", false))
+	is_affected = bool(flags.get("is_affected", false))
+	is_dead = bool(flags.get("is_dead", false))
+	show_death_marker_until_tick = int(flags.get("show_death_marker_until_tick", -1))
+	_visual_tick = int(flags.get("current_tick", _visual_tick))
+	queue_redraw()
+
+
+func is_death_marker_visible(current_tick: int) -> bool:
+	return is_dead and show_death_marker_until_tick >= 0 and current_tick <= show_death_marker_until_tick
 
 
 func _as_vector2(raw_value) -> Vector2:
@@ -51,7 +73,13 @@ func _draw() -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		rect = Rect2(Vector2.ZERO, custom_minimum_size)
 	draw_rect(rect, COLOR_BG, true)
+	if is_dead:
+		draw_rect(rect, COLOR_DEAD_OVERLAY, true)
+	if is_hit:
+		draw_rect(rect, COLOR_HIT_FLASH, true)
 	draw_rect(rect, get_side_color(), false, 2.0)
+	if is_affected:
+		draw_arc(rect.size * 0.5, 22.0, 0.0, TAU, 24, COLOR_EFFECT_RING, 2.0)
 
 	var hp_bg := Rect2(Vector2(8, rect.size.y - 16), Vector2(rect.size.x - 16, 8))
 	draw_rect(hp_bg, COLOR_HP_BG, true)
@@ -68,3 +96,13 @@ func _draw() -> void:
 		14,
 		get_side_color()
 	)
+	if is_death_marker_visible(_visual_tick):
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(8, 38),
+			"已阵亡",
+			HORIZONTAL_ALIGNMENT_LEFT,
+			rect.size.x - 16,
+			14,
+			COLOR_DEATH_MARKER
+		)

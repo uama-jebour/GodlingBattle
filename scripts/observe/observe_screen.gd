@@ -8,6 +8,7 @@ const DISPLAY_NAME_RESOLVER := preload("res://scripts/ui/display_name_resolver.g
 const BATTLE_REPORT_FORMATTER := preload("res://scripts/observe/battle_report_formatter.gd")
 const FRAME_STEP_SECONDS := 0.05
 const JUMP_FRAME_DELTA := 10
+const DEATH_MARKER_LINGER_TICKS := 12
 
 var _timeline: Array = []
 var _frame_index := 0
@@ -32,6 +33,8 @@ var _battle_map: Control
 var _battlefield_layout_solver := BATTLEFIELD_LAYOUT_SOLVER.new()
 var _display_name_resolver := DISPLAY_NAME_RESOLVER.new()
 var _battle_report_formatter := BATTLE_REPORT_FORMATTER.new()
+var _prev_hp_by_entity: Dictionary = {}
+var _death_marker_until_tick: Dictionary = {}
 @onready var _pause_button: Button = $PlaybackPanel/PauseButton
 @onready var _step_back_button: Button = $PlaybackPanel/StepBackButton
 @onready var _progress_slider: HSlider = $PlaybackPanel/ProgressSlider
@@ -78,6 +81,8 @@ func _ready() -> void:
 	_ensure_hud()
 	_ensure_map()
 	_timeline = session_state.last_timeline.duplicate(true)
+	_prev_hp_by_entity.clear()
+	_death_marker_until_tick.clear()
 	_frame_index = 0
 	_current_frame_index = -1
 	_playback_accumulator = 0.0
@@ -280,6 +285,7 @@ func play_battle(setup: Dictionary) -> void:
 func apply_timeline_frame(frame: Dictionary) -> void:
 	_current_tick = int(frame.get("tick", 0))
 	_current_entities = frame.get("entities", []).duplicate(true)
+	_prev_hp_by_entity = _hp_lookup_for_frame_index(_current_frame_index - 1)
 	var snapshot := build_token_snapshot()
 	sync_token_views(snapshot)
 	_ensure_map()
@@ -295,7 +301,8 @@ func build_token_snapshot() -> Array:
 			"display_name": str(entity.get("display_name", "")),
 			"side": str(entity.get("side", "")),
 			"hp_ratio": _hp_ratio(entity),
-			"position": _entity_position(entity)
+			"position": _entity_position(entity),
+			"visual_flags": _build_visual_flags(entity)
 		})
 	return _battlefield_layout_solver.resolve(rows, _battlefield_bounds())
 
@@ -374,6 +381,8 @@ func sync_token_views(snapshot: Array) -> void:
 		elif token.get_parent() != target_layer:
 			token.reparent(target_layer)
 		token.apply_snapshot(row)
+		if token.has_method("set_visual_flags"):
+			token.call("set_visual_flags", _visual_flags_from_snapshot(row))
 		alive_ids[entity_id] = true
 	for entity_id in _token_views.keys():
 		if alive_ids.has(entity_id):
@@ -465,6 +474,89 @@ func get_tick_summary_text() -> String:
 
 func get_detail_log_visible() -> bool:
 	return _detail_log_list != null and _detail_log_list.visible
+
+
+func _build_visual_flags(entity: Dictionary) -> Dictionary:
+	var entity_id := str(entity.get("entity_id", ""))
+	var hp_now := float(entity.get("hp", 0.0))
+	var hp_prev := float(_prev_hp_by_entity.get(entity_id, hp_now))
+	var is_dead := not bool(entity.get("alive", false))
+	return {
+		"is_hit": hp_now < hp_prev,
+		"is_affected": _has_tick_effect(entity_id, _current_tick),
+		"is_dead": is_dead,
+		"show_death_marker_until_tick": _death_marker_expiry_tick(entity_id, is_dead),
+		"current_tick": _current_tick
+	}
+
+
+func _visual_flags_from_snapshot(row: Dictionary) -> Dictionary:
+	var flags = row.get("visual_flags", {})
+	if flags is Dictionary:
+		return flags
+	return {
+		"is_hit": false,
+		"is_affected": false,
+		"is_dead": false,
+		"show_death_marker_until_tick": -1,
+		"current_tick": _current_tick
+	}
+
+
+func _death_marker_expiry_tick(entity_id: String, is_dead: bool) -> int:
+	if not is_dead:
+		return -1
+	if _death_marker_until_tick.has(entity_id):
+		return int(_death_marker_until_tick[entity_id])
+	var death_tick := _first_death_tick_for_entity(entity_id)
+	var expiry_tick := death_tick + DEATH_MARKER_LINGER_TICKS
+	_death_marker_until_tick[entity_id] = expiry_tick
+	return expiry_tick
+
+
+func _first_death_tick_for_entity(entity_id: String) -> int:
+	if _current_frame_index < 0 or _timeline.is_empty():
+		return _current_tick
+	var was_alive := true
+	for index in range(_current_frame_index + 1):
+		var frame: Dictionary = _timeline[index]
+		var entity := _entity_in_frame(frame.get("entities", []), entity_id)
+		if entity.is_empty():
+			continue
+		var is_alive := bool(entity.get("alive", false))
+		if was_alive and not is_alive:
+			return int(frame.get("tick", _current_tick))
+		was_alive = is_alive
+	return _current_tick
+
+
+func _entity_in_frame(entities: Array, entity_id: String) -> Dictionary:
+	for entity in entities:
+		if str(entity.get("entity_id", "")) == entity_id:
+			return entity
+	return {}
+
+
+func _hp_lookup_for_frame_index(frame_index: int) -> Dictionary:
+	if frame_index < 0 or frame_index >= _timeline.size():
+		return {}
+	var hp_by_entity: Dictionary = {}
+	var frame_entities: Array = (_timeline[frame_index] as Dictionary).get("entities", [])
+	for entity in frame_entities:
+		hp_by_entity[str(entity.get("entity_id", ""))] = float(entity.get("hp", 0.0))
+	return hp_by_entity
+
+
+func _has_tick_effect(entity_id: String, tick: int) -> bool:
+	for row in _event_rows:
+		if int(row.get("tick", -1)) != tick:
+			continue
+		var row_type := str(row.get("type", ""))
+		if row_type in ["strategy_cast", "event_warning", "event_resolve", "event_unresolved_effect"]:
+			return true
+		if row_type in ["ally_down", "hero_down", "enemy_down"] and str(row.get("entity_id", "")) == entity_id:
+			return true
+	return false
 
 
 func _hp_ratio(entity: Dictionary) -> float:
