@@ -88,6 +88,7 @@ func sync_token_views(snapshot: Array) -> void:
 		var token = _token_views.get(entity_id, null)
 		if token == null:
 			token = TOKEN_VIEW_SCENE.instantiate()
+			token.size = token.custom_minimum_size
 			_token_host.add_child(token)
 			_token_views[entity_id] = token
 		token.apply_snapshot(row)
