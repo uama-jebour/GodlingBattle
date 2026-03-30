@@ -303,8 +303,8 @@ func advance_playback_step() -> bool:
 	if _frame_index >= _timeline.size():
 		return true
 	var frame: Dictionary = _timeline[_frame_index]
-	apply_timeline_frame(frame)
 	_current_frame_index = _frame_index
+	apply_timeline_frame(frame)
 	_frame_index += 1
 	_refresh_progress_slider()
 	return _frame_index >= _timeline.size()
@@ -325,8 +325,8 @@ func _seek_to_frame(frame_index: int) -> void:
 		return
 	var target_index := clampi(frame_index, 0, _timeline.size() - 1)
 	var frame: Dictionary = _timeline[target_index]
-	apply_timeline_frame(frame)
 	_current_frame_index = target_index
+	apply_timeline_frame(frame)
 	_frame_index = target_index + 1
 	_playback_accumulator = 0.0
 	_is_playing = _frame_index < _timeline.size()
@@ -667,6 +667,9 @@ func _build_strategy_cast_text(tick: int, rows: Array) -> String:
 
 func _refresh_battle_overview() -> void:
 	if _battle_overview_label == null:
+		return
+	if _battle_result.is_empty() and _timeline.is_empty():
+		_battle_overview_label.text = "战况总览：数据准备中"
 		return
 	var victory_text := "未知"
 	if not _battle_result.is_empty():
