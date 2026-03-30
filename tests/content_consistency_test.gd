@@ -10,9 +10,21 @@ func _initialize() -> void:
 func _run() -> void:
 	var content: Node = load("res://autoload/battle_content.gd").new()
 	for pack in content.get_test_packs():
+		var battle_id := str(pack.get("battle_id", ""))
+		if content.get_battle(battle_id).is_empty():
+			_failures.append("missing battle: %s" % battle_id)
 		for strategy_id in pack.get("strategy_ids", []):
 			if content.get_strategy(str(strategy_id)).is_empty():
 				_failures.append("missing strategy: %s" % strategy_id)
+	var battle_ids := ["battle_void_gate_alpha", "battle_void_gate_beta"]
+	for battle_id in battle_ids:
+		var battle: Dictionary = content.get_battle(battle_id)
+		if battle.is_empty():
+			_failures.append("missing battle definition: %s" % battle_id)
+			continue
+		for event_id in battle.get("event_ids", []):
+			if content.get_event(str(event_id)).is_empty():
+				_failures.append("missing event for battle %s: %s" % [battle_id, event_id])
 	content.free()
 	_finish()
 

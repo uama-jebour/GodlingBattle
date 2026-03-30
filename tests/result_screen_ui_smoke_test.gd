@@ -10,6 +10,13 @@ func _initialize() -> void:
 func _run() -> void:
 	var session_state := root.get_node_or_null("SessionState")
 	assert(session_state != null)
+	session_state.battle_setup = {
+		"hero_id": "hero_angel",
+		"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+		"strategy_ids": ["strat_void_echo", "strat_chill_wave"],
+		"battle_id": "battle_void_gate_beta",
+		"seed": 20260330
+	}
 	session_state.last_battle_result = {
 		"victory": true,
 		"survivors": ["hero_angel"],
@@ -25,6 +32,8 @@ func _run() -> void:
 	assert(screen.get_node_or_null("Layout/HeadlineLabel") != null)
 	assert(screen.get_node_or_null("Layout/ReplayButton") != null)
 	assert(screen.get_node_or_null("Layout/ReturnButton") != null)
+	assert(screen.get_node_or_null("Layout/StrategyCastSummaryLabel") != null)
+	assert(screen.get_node_or_null("Layout/SetupSnapshotLabel") != null)
 	assert(not (screen.get_node("Layout/HeadlineLabel") as Label).text.is_empty())
 
 	screen.queue_free()

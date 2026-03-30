@@ -17,7 +17,7 @@ func _run() -> void:
 	_expect_node(screen, "Layout/HeroSelect")
 	_expect_node(screen, "Layout/BattleSelect")
 	_expect_node(screen, "Layout/SeedInput")
-	_expect_node(screen, "Layout/StrategySelect")
+	_expect_node(screen, "Layout/StrategyList")
 
 	screen.queue_free()
 	await process_frame

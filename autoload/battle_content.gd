@@ -95,6 +95,24 @@ var _events := {
 		"response_tag": "恶魔召唤",
 		"response_level": 1,
 		"unresolved_effect_def": {"type": "summon", "unit_id": "enemy_hunter_fiend", "count": 1}
+	}),
+	"evt_demon_ambush": TYPES.event({
+		"event_id": "evt_demon_ambush",
+		"name": "恶魔伏击",
+		"trigger_def": {"type": "elapsed_gte", "value": 6.0},
+		"warning_seconds": 3.0,
+		"response_tag": "恶魔召唤",
+		"response_level": 1,
+		"unresolved_effect_def": {"type": "summon", "unit_id": "enemy_hunter_fiend", "count": 1}
+	}),
+	"evt_void_collapse": TYPES.event({
+		"event_id": "evt_void_collapse",
+		"name": "虚空坍缩",
+		"trigger_def": {"type": "elapsed_gte", "value": 12.0},
+		"warning_seconds": 4.0,
+		"response_tag": "崩解防护",
+		"response_level": 2,
+		"unresolved_effect_def": {"type": "void_shock", "damage": 8.0}
 	})
 }
 
@@ -106,6 +124,14 @@ var _battles := {
 		"enemy_units": ["enemy_wandering_demon", "enemy_animated_machine"],
 		"event_ids": ["evt_hunter_fiend_arrival"],
 		"seed": 1001
+	}),
+	"battle_void_gate_beta": TYPES.battle({
+		"battle_id": "battle_void_gate_beta",
+		"display_name": "虚无裂隙·二层",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_wandering_demon", "enemy_animated_machine"],
+		"event_ids": ["evt_demon_ambush", "evt_void_collapse"],
+		"seed": 20260330
 	})
 }
 
@@ -116,6 +142,14 @@ func get_unit(unit_id: String) -> Dictionary:
 
 func get_strategy(strategy_id: String) -> Dictionary:
 	return _strategies.get(strategy_id, {}).duplicate(true)
+
+
+func get_all_strategy_ids() -> Array[String]:
+	var strategy_ids: Array[String] = []
+	for strategy_id in _strategies.keys():
+		strategy_ids.append(String(strategy_id))
+	strategy_ids.sort()
+	return strategy_ids
 
 
 func get_event(event_id: String) -> Dictionary:
@@ -169,5 +203,12 @@ func get_test_packs() -> Array:
 			"hero_id": "hero_angel",
 			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
 			"strategy_ids": ["strat_void_echo", "strat_chill_wave"]
+		},
+		{
+			"pack_id": "pack_multi_event_beta",
+			"battle_id": "battle_void_gate_beta",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_counter_demon_summon"]
 		}
 	]

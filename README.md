@@ -50,5 +50,17 @@
 - 新项目保持独立，不要把新系统文件再写回旧 `Godling`
 - 首期不做混合交互战斗
 - 统一使用术语 `出战前准备`，不要写成“远征前准备”
-- Godot 元数据文件 `*.uid` 与资源导入配置 `*.import` 需纳入版本管理
+- Godot 资源导入配置 `*.import` 需纳入版本管理
+- `tests/*.gd.uid` 统一排除版本管理（测试脚本按路径执行，避免频繁 UID 噪音）
 - 继续忽略 `.godot/` 与 `.import/` 目录缓存，不提交引擎缓存产物
+
+## Benchmark 门禁
+
+- 安装预提交 hook：
+  - `./tools/install_git_hooks.sh`
+- 手动执行 benchmark 门禁：
+  - `./tools/run_benchmark_gate.sh`
+- 更新主基线（已确认性能变更合理后）：
+  - `BENCH_WRITE_BASELINE=1 ./tools/run_benchmark_gate.sh`
+
+详细规则见：[docs/benchmark-baseline-policy.md](docs/benchmark-baseline-policy.md)

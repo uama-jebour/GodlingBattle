@@ -1,0 +1,28 @@
+{
+	"avg_run_ms": 18.9271666666667,
+	"issues": [],
+	"max_run_ms": 23.234,
+	"scenario_summaries": [
+		{
+			"avg_ms": 19.5033333333333,
+			"deterministic_ok": true,
+			"iterations": 6,
+			"max_ms": 23.234,
+			"scenario_id": "alpha_stack",
+			"status_counts": {
+				"completed": 6
+			}
+		},
+		{
+			"avg_ms": 18.351,
+			"deterministic_ok": true,
+			"iterations": 6,
+			"max_ms": 19.483,
+			"scenario_id": "beta_multi_event",
+			"status_counts": {
+				"completed": 6
+			}
+		}
+	],
+	"total_runs": 12
+}

@@ -75,6 +75,7 @@ func _resolve_events(battle_def: Dictionary, content: Node) -> Array:
 
 func _create_entity(unit_id: String, side: String, unit_def: Dictionary, index: int) -> Dictionary:
 	var hp := float(unit_def.get("max_hp", 30.0))
+	var move_speed := float(unit_def.get("move_speed", 6.0))
 	return {
 		"entity_id": "%s_%d" % [unit_id, index],
 		"unit_id": unit_id,
@@ -86,7 +87,12 @@ func _create_entity(unit_id: String, side: String, unit_def: Dictionary, index: 
 		"attack_power": float(unit_def.get("attack_power", 3.0)),
 		"attack_speed": float(unit_def.get("attack_speed", 1.0)),
 		"attack_range": float(unit_def.get("attack_range", 1.0)),
-		"move_speed": float(unit_def.get("move_speed", 6.0)),
+		"base_move_speed": move_speed,
+		"move_speed": move_speed,
+		"tags": unit_def.get("tags", []).duplicate(),
+		"attack_cooldown_ticks": 0,
+		"slow_ratio": 0.0,
+		"slow_ticks_remaining": 0,
 		"position": _initial_position(side, index)
 	}
 
@@ -105,7 +111,7 @@ func _fallback_enemy_def(enemy_id: String) -> Dictionary:
 
 func _initial_position(side: String, index: int) -> Vector2:
 	if side == "enemy":
-		return Vector2(1500.0, 260.0 + float(index) * 90.0)
+		return Vector2(500.0, 260.0 + float(index) * 90.0)
 	if side == "hero":
 		return Vector2(320.0, 280.0)
 	return Vector2(260.0, 380.0 + float(index) * 90.0)

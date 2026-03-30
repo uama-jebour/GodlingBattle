@@ -4,3 +4,5 @@
 export_presets.cfg
 .worktrees/
 worktrees/
+tests/*.gd.uid
+tests/**/*.gd.uid

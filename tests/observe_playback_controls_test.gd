@@ -31,6 +31,22 @@ func _run() -> void:
 	assert(pause_button != null)
 	var speed_select := screen.get_node_or_null("PlaybackPanel/SpeedSelect") as OptionButton
 	assert(speed_select != null)
+	var progress_slider := screen.get_node_or_null("PlaybackPanel/ProgressSlider") as HSlider
+	assert(progress_slider != null)
+	var step_back_button := screen.get_node_or_null("PlaybackPanel/StepBackButton") as Button
+	assert(step_back_button != null)
+	var step_forward_button := screen.get_node_or_null("PlaybackPanel/StepForwardButton") as Button
+	assert(step_forward_button != null)
+	var event_filter_select := screen.get_node_or_null("EventPanel/EventFilterSelect") as OptionButton
+	assert(event_filter_select != null)
+	var event_timeline_zoom_select := screen.get_node_or_null("EventPanel/EventTimelineZoomSelect") as OptionButton
+	assert(event_timeline_zoom_select != null)
+	var event_timeline_density_select := screen.get_node_or_null("EventPanel/EventTimelineDensitySelect") as OptionButton
+	assert(event_timeline_density_select != null)
+	var event_timeline_label := screen.get_node_or_null("EventPanel/EventTimelineLabel") as Label
+	assert(event_timeline_label != null)
+	var event_marker_list := screen.get_node_or_null("EventPanel/EventMarkerList") as ItemList
+	assert(event_marker_list != null)
 
 	pause_button.emit_signal("pressed")
 	var frame_before_pause := int(screen._frame_index)

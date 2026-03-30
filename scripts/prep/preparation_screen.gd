@@ -13,13 +13,14 @@ var _current_selection: Dictionary = {
 	"seed": 1001
 }
 var _is_syncing_controls := false
+var _strategy_checkboxes: Dictionary = {}
 
 @onready var layout: VBoxContainer = $Layout
 @onready var title_label: Label = $Layout/TitleLabel
 @onready var hero_select: OptionButton = $Layout/HeroSelect
 @onready var battle_select: OptionButton = $Layout/BattleSelect
 @onready var seed_input: SpinBox = $Layout/SeedInput
-@onready var strategy_select: CheckBox = $Layout/StrategySelect
+@onready var strategy_list: VBoxContainer = $Layout/StrategyList
 @onready var budget_label: Label = $Layout/BudgetLabel
 @onready var selection_summary: Label = $Layout/SelectionSummary
 @onready var battle_summary: Label = $Layout/BattleSummary
@@ -54,8 +55,7 @@ func _bind_content_options() -> void:
 	var battle: Dictionary = content.get_battle("battle_void_gate_alpha")
 	battle_select.add_item(String(battle.get("display_name", "虚无裂隙·一层")), 0)
 	battle_select.set_item_metadata(0, "battle_void_gate_alpha")
-	var strategy: Dictionary = content.get_strategy(VOID_ECHO_STRATEGY_ID)
-	strategy_select.text = "携带：%s" % String(strategy.get("name", "虚无回响"))
+	_rebuild_strategy_options(content)
 	content.free()
 
 
@@ -66,8 +66,6 @@ func _bind_control_events() -> void:
 		battle_select.item_selected.connect(_on_control_changed)
 	if not seed_input.value_changed.is_connected(_on_seed_changed):
 		seed_input.value_changed.connect(_on_seed_changed)
-	if not strategy_select.toggled.is_connected(_on_strategy_toggled):
-		strategy_select.toggled.connect(_on_strategy_toggled)
 
 
 func _apply_selection_to_controls() -> void:
@@ -76,14 +74,22 @@ func _apply_selection_to_controls() -> void:
 	_select_option_by_metadata(battle_select, String(_current_selection.get("battle_id", "")))
 	seed_input.value = float(int(_current_selection.get("seed", 1)))
 	var strategy_ids: Array = _current_selection.get("strategy_ids", [])
-	strategy_select.button_pressed = strategy_ids.has(VOID_ECHO_STRATEGY_ID)
+	for strategy_id in _strategy_checkboxes.keys():
+		var checkbox := _strategy_checkboxes[strategy_id] as CheckBox
+		if checkbox == null:
+			continue
+		checkbox.button_pressed = strategy_ids.has(strategy_id)
 	_is_syncing_controls = false
 
 
 func _pull_selection_from_controls() -> void:
 	var strategy_ids: Array[String] = []
-	if strategy_select.button_pressed:
-		strategy_ids.append(VOID_ECHO_STRATEGY_ID)
+	for strategy_id in _sorted_strategy_checkbox_ids():
+		var checkbox := _strategy_checkboxes.get(strategy_id, null) as CheckBox
+		if checkbox == null:
+			continue
+		if checkbox.button_pressed:
+			strategy_ids.append(strategy_id)
 	var ally_ids: Array = _current_selection.get("ally_ids", [])
 	if ally_ids.size() != DEFAULT_ALLY_IDS.size():
 		ally_ids = DEFAULT_ALLY_IDS.duplicate()
@@ -94,6 +100,30 @@ func _pull_selection_from_controls() -> void:
 		"battle_id": _selected_metadata(battle_select, "battle_void_gate_alpha"),
 		"seed": int(seed_input.value)
 	}
+
+
+func _rebuild_strategy_options(content: Node) -> void:
+	for child in strategy_list.get_children():
+		child.queue_free()
+	_strategy_checkboxes.clear()
+	var strategy_ids: Array[String] = content.get_all_strategy_ids()
+	for strategy_id in strategy_ids:
+		var strategy: Dictionary = content.get_strategy(strategy_id)
+		var checkbox := CheckBox.new()
+		checkbox.name = "Strategy_%s" % strategy_id
+		checkbox.text = "携带：%s（%d）" % [String(strategy.get("name", strategy_id)), int(strategy.get("cost", 0))]
+		checkbox.button_pressed = false
+		checkbox.toggled.connect(_on_strategy_toggled)
+		strategy_list.add_child(checkbox)
+		_strategy_checkboxes[strategy_id] = checkbox
+
+
+func _sorted_strategy_checkbox_ids() -> Array[String]:
+	var strategy_ids: Array[String] = []
+	for strategy_id in _strategy_checkboxes.keys():
+		strategy_ids.append(String(strategy_id))
+	strategy_ids.sort()
+	return strategy_ids
 
 
 func _select_option_by_metadata(option: OptionButton, value: String) -> void:
