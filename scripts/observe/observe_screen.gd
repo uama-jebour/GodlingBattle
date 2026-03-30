@@ -36,6 +36,10 @@ var _battle_map: Control
 var _battlefield_layout_solver := BATTLEFIELD_LAYOUT_SOLVER.new()
 var _display_name_resolver := DISPLAY_NAME_RESOLVER.new()
 var _battle_report_formatter := BATTLE_REPORT_FORMATTER.new()
+var _strategy_panel_strategy_ids: Array[String] = []
+var _strategy_panel_cooldown_seconds_by_id: Dictionary = {}
+var _strategy_panel_display_name_by_id: Dictionary = {}
+var _strategy_cast_ticks_by_id: Dictionary = {}
 var _strategy_card_host: HBoxContainer
 var _strategy_card_views: Dictionary = {}
 var _ally_roster_label: Label
@@ -76,6 +80,7 @@ func _ready() -> void:
 	var session_state := _session_state()
 	if session_state == null or session_state.battle_setup.is_empty():
 		_event_rows = []
+		_rebuild_strategy_card_runtime_cache({}, _event_rows)
 		_battle_result = {}
 		_refresh_event_timeline()
 		_refresh_battle_overview()
@@ -91,6 +96,7 @@ func _ready() -> void:
 		play_battle(session_state.battle_setup)
 	_battle_result = session_state.last_battle_result.duplicate(true)
 	_event_rows = _battle_result.get("log_entries", []).duplicate(true)
+	_rebuild_strategy_card_runtime_cache(session_state.battle_setup, _event_rows)
 	_ensure_token_host()
 	_ensure_hud()
 	_ensure_map()
@@ -932,15 +938,10 @@ func _refresh_strategy_cards(tick: int) -> void:
 
 
 func _build_strategy_card_states(tick: int) -> Array:
-	var session_state := _session_state()
-	if session_state == null:
-		return []
-	var battle_setup: Dictionary = session_state.battle_setup
-	if battle_setup.is_empty():
+	if _strategy_panel_strategy_ids.is_empty():
 		return []
 	var states: Array = []
-	for raw_strategy_id in battle_setup.get("strategy_ids", []):
-		var strategy_id := str(raw_strategy_id)
+	for strategy_id in _strategy_panel_strategy_ids:
 		if strategy_id.is_empty():
 			continue
 		var cooldown_total := _strategy_cooldown_seconds(strategy_id)
@@ -956,46 +957,77 @@ func _build_strategy_card_states(tick: int) -> Array:
 			ratio = clampf(1.0 - (remaining / cooldown_total), 0.0, 1.0)
 		states.append({
 			"strategy_id": strategy_id,
-			"name": _strategy_display_name(strategy_id),
+			"name": _strategy_panel_display_name(strategy_id),
 			"cooldown_total_seconds": cooldown_total,
 			"cooldown_remaining_seconds": remaining,
 			"cooldown_ratio": ratio,
-			"triggered": _is_strategy_triggered_at_tick(strategy_id, tick)
+			"triggered": last_cast_tick == tick
 		})
 	return states
 
 
 func _strategy_cooldown_seconds(strategy_id: String) -> float:
-	if strategy_id.is_empty():
-		return 0.0
-	var content := BATTLE_CONTENT.new()
-	var strategy_def: Dictionary = content.get_strategy(strategy_id)
-	content.free()
-	return maxf(0.0, float(strategy_def.get("cooldown", 0.0)))
+	return float(_strategy_panel_cooldown_seconds_by_id.get(strategy_id, 0.0))
 
 
 func _last_cast_tick_for_strategy(strategy_id: String, current_tick: int) -> int:
-	var last_tick := -1
-	for row in _event_rows:
-		if int(row.get("tick", -1)) > current_tick:
-			continue
-		if str(row.get("type", "")) != "strategy_cast":
-			continue
-		if str(row.get("strategy_id", "")) != strategy_id:
-			continue
-		last_tick = int(row.get("tick", -1))
+	var ticks: Array = _strategy_cast_ticks_by_id.get(strategy_id, [])
+	if not (ticks is Array) or ticks.is_empty():
+		return -1
+	var left: int = 0
+	var right: int = ticks.size() - 1
+	var last_tick: int = -1
+	while left <= right:
+		var middle := int((left + right) / 2)
+		var tick := int(ticks[middle])
+		if tick <= current_tick:
+			last_tick = tick
+			left = middle + 1
+		else:
+			right = middle - 1
 	return last_tick
 
 
 func _is_strategy_triggered_at_tick(strategy_id: String, tick: int) -> bool:
-	for row in _event_rows:
-		if int(row.get("tick", -1)) != tick:
+	return _last_cast_tick_for_strategy(strategy_id, tick) == tick
+
+
+func _rebuild_strategy_card_runtime_cache(battle_setup: Dictionary, rows: Array) -> void:
+	_strategy_panel_strategy_ids.clear()
+	_strategy_panel_cooldown_seconds_by_id.clear()
+	_strategy_panel_display_name_by_id.clear()
+	_strategy_cast_ticks_by_id.clear()
+	if battle_setup.is_empty():
+		return
+	var content := BATTLE_CONTENT.new()
+	for raw_strategy_id in battle_setup.get("strategy_ids", []):
+		var strategy_id := str(raw_strategy_id)
+		if strategy_id.is_empty():
 			continue
+		_strategy_panel_strategy_ids.append(strategy_id)
+		if _strategy_panel_cooldown_seconds_by_id.has(strategy_id):
+			continue
+		var strategy_def: Dictionary = content.get_strategy(strategy_id)
+		_strategy_panel_cooldown_seconds_by_id[strategy_id] = maxf(0.0, float(strategy_def.get("cooldown", 0.0)))
+		_strategy_panel_display_name_by_id[strategy_id] = String(strategy_def.get("name", _display_name_resolver.strategy_name(strategy_id)))
+	content.free()
+	for row in rows:
 		if str(row.get("type", "")) != "strategy_cast":
 			continue
-		if str(row.get("strategy_id", "")) == strategy_id:
-			return true
-	return false
+		var strategy_id := str(row.get("strategy_id", ""))
+		if strategy_id.is_empty():
+			continue
+		var ticks: Array = _strategy_cast_ticks_by_id.get(strategy_id, [])
+		ticks.append(int(row.get("tick", -1)))
+		_strategy_cast_ticks_by_id[strategy_id] = ticks
+	for strategy_id in _strategy_cast_ticks_by_id.keys():
+		var ticks: Array = _strategy_cast_ticks_by_id[strategy_id]
+		ticks.sort()
+		_strategy_cast_ticks_by_id[strategy_id] = ticks
+
+
+func _strategy_panel_display_name(strategy_id: String) -> String:
+	return String(_strategy_panel_display_name_by_id.get(strategy_id, _strategy_display_name(strategy_id)))
 
 
 func _refresh_battle_overview() -> void:

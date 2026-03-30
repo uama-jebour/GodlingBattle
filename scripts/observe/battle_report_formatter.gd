@@ -7,6 +7,8 @@ const EMPTY_BRIEF_TEXT := "本帧动态：暂无关键事件"
 const EMPTY_DETAIL_TEXT := "暂无战术明细"
 
 var _resolver := DISPLAY_NAME_RESOLVER.new()
+var _warning_seconds_by_event_id: Dictionary = {}
+var _warning_seconds_cache_ready := false
 
 
 func build_tick_brief(rows: Array, tick: int, filter_type: String = "all") -> String:
@@ -127,7 +129,18 @@ func _warning_seconds(row: Dictionary) -> int:
 	var event_id := str(row.get("event_id", ""))
 	if event_id.is_empty():
 		return 0
+	_ensure_warning_seconds_cache()
+	return maxi(0, int(_warning_seconds_by_event_id.get(event_id, 0)))
+
+
+func _ensure_warning_seconds_cache() -> void:
+	if _warning_seconds_cache_ready:
+		return
+	_warning_seconds_cache_ready = true
 	var content := BATTLE_CONTENT.new()
-	var event_def: Dictionary = content.get_event(event_id)
+	var raw_events = content.get("_events")
+	if raw_events is Dictionary:
+		for event_id in raw_events.keys():
+			var event_def: Dictionary = raw_events[event_id]
+			_warning_seconds_by_event_id[str(event_id)] = int(round(float(event_def.get("warning_seconds", 0.0))))
 	content.free()
-	return maxi(0, int(round(float(event_def.get("warning_seconds", 0.0)))))
