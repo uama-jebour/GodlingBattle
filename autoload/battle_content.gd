@@ -47,6 +47,36 @@ var _strategies := {
 		"tags": ["虚无"],
 		"trigger_def": {"type": "always_on"},
 		"effect_def": {"type": "ally_tag_attack_shift", "tag": "虚无", "bonus": 5.0, "penalty": -5.0}
+	}),
+	"strat_chill_wave": TYPES.strategy({
+		"strategy_id": "strat_chill_wave",
+		"name": "寒潮冲击",
+		"kind": "active",
+		"cost": 3,
+		"cooldown": 8.0,
+		"tags": ["寒霜"],
+		"trigger_def": {"type": "cooldown"},
+		"effect_def": {"type": "enemy_group_slow", "ratio": 0.35, "duration": 3.0}
+	}),
+	"strat_counter_demon_summon": TYPES.strategy({
+		"strategy_id": "strat_counter_demon_summon",
+		"name": "反制恶魔召唤",
+		"kind": "response",
+		"cost": 2,
+		"cooldown": 0.0,
+		"tags": ["反制"],
+		"trigger_def": {"type": "event_response", "response_tag": "恶魔召唤", "response_level": 1},
+		"effect_def": {"type": "event_cancel", "event_tag": "恶魔召唤", "event_level": 1}
+	}),
+	"strat_nuclear_strike": TYPES.strategy({
+		"strategy_id": "strat_nuclear_strike",
+		"name": "核击协议",
+		"kind": "active",
+		"cost": 6,
+		"cooldown": 25.0,
+		"tags": ["爆发"],
+		"trigger_def": {"type": "cooldown"},
+		"effect_def": {"type": "enemy_front_nuke", "damage": 20.0}
 	})
 }
 
