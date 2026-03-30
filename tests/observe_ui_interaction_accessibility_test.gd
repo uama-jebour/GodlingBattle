@@ -58,6 +58,23 @@ func _run() -> void:
 	if screen.get_node_or_null("EventPanel/TimelineSectionTitleBar") == null:
 		_failures.append("missing TimelineSectionTitleBar")
 
+	var token_host := screen.get_node_or_null("TokenHost") as Control
+	if token_host == null:
+		_failures.append("missing TokenHost")
+	else:
+		if token_host.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+			_failures.append("TokenHost should ignore mouse input to avoid blocking right panel")
+	var ally_layer := screen.get_node_or_null("TokenHost/AllyLayer") as Control
+	if ally_layer == null:
+		_failures.append("missing AllyLayer")
+	elif ally_layer.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		_failures.append("AllyLayer should ignore mouse input")
+	var enemy_layer := screen.get_node_or_null("TokenHost/EnemyLayer") as Control
+	if enemy_layer == null:
+		_failures.append("missing EnemyLayer")
+	elif enemy_layer.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		_failures.append("EnemyLayer should ignore mouse input")
+
 	screen.queue_free()
 	await process_frame
 	_finish()

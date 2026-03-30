@@ -484,16 +484,19 @@ func _ensure_token_host() -> void:
 		return
 	_token_host = Control.new()
 	_token_host.name = "TokenHost"
+	_token_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_token_host.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_token_host)
 
 	_ally_layer = Control.new()
 	_ally_layer.name = "AllyLayer"
+	_ally_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ally_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_token_host.add_child(_ally_layer)
 
 	_enemy_layer = Control.new()
 	_enemy_layer.name = "EnemyLayer"
+	_enemy_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_enemy_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_token_host.add_child(_enemy_layer)
 
