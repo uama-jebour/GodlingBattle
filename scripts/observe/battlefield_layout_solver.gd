@@ -1,6 +1,8 @@
 extends RefCounted
 
-const MIN_SPACING := 90.0
+const TOKEN_SIZE := Vector2(96, 112)
+const TOKEN_GAP := 8.0
+const MIN_SPACING := TOKEN_SIZE.y + TOKEN_GAP
 const FALLBACK_BOUNDS := Rect2(0, 0, 640, 360)
 
 
@@ -32,8 +34,9 @@ func _resolve_group(resolved: Array, group: Array, bounds: Rect2) -> void:
 	var ordered: Array = group.duplicate(true)
 	ordered.sort_custom(_sort_group_row)
 	var spacing := _target_spacing(ordered.size(), bounds)
-	var min_y := bounds.position.y
-	var max_y := bounds.end.y
+	var clamped_bounds := _footprint_bounds(bounds)
+	var min_y := clamped_bounds.position.y
+	var max_y := clamped_bounds.end.y
 	var max_first_y := max_y - spacing * float(maxi(0, ordered.size() - 1))
 	var first_item: Dictionary = ordered[0]
 	var y_positions: Array[float] = [clampf(float((first_item.get("position", Vector2.ZERO) as Vector2).y), min_y, max_first_y)]
@@ -50,7 +53,7 @@ func _resolve_group(resolved: Array, group: Array, bounds: Rect2) -> void:
 			continue
 		var row: Dictionary = resolved[row_index]
 		var position := _row_position(row)
-		position.x = clampf(position.x, bounds.position.x, bounds.end.x)
+		position.x = clampf(position.x, clamped_bounds.position.x, clamped_bounds.end.x)
 		position.y = y_positions[index]
 		row["position"] = position
 		resolved[row_index] = row
@@ -59,7 +62,7 @@ func _resolve_group(resolved: Array, group: Array, bounds: Rect2) -> void:
 func _target_spacing(count: int, bounds: Rect2) -> float:
 	if count <= 1:
 		return 0.0
-	var available_height := maxf(bounds.size.y, 0.0)
+	var available_height := maxf(_footprint_bounds(bounds).size.y, 0.0)
 	var max_spacing := available_height / float(count - 1)
 	return minf(MIN_SPACING, max_spacing)
 
@@ -68,6 +71,14 @@ func _normalized_bounds(bounds: Rect2) -> Rect2:
 	if bounds.size.x > 0.0 and bounds.size.y > 0.0:
 		return bounds
 	return FALLBACK_BOUNDS
+
+
+func _footprint_bounds(bounds: Rect2) -> Rect2:
+	var footprint_size := Vector2(
+		maxf(bounds.size.x - TOKEN_SIZE.x, 0.0),
+		maxf(bounds.size.y - TOKEN_SIZE.y, 0.0)
+	)
+	return Rect2(bounds.position, footprint_size)
 
 
 func _row_position(row: Dictionary) -> Vector2:

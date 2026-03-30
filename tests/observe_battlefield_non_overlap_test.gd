@@ -1,6 +1,7 @@
 extends SceneTree
 
 const SOLVER_PATH := "res://scripts/observe/battlefield_layout_solver.gd"
+const TOKEN_SIZE := Vector2(96, 112)
 
 var _failures: Array[String] = []
 
@@ -47,25 +48,37 @@ func _run() -> void:
 		}
 	]
 	var resolved: Array = solver.resolve(rows, Rect2(0, 0, 640, 360))
-	_assert_min_pair_distance(resolved, ["hero_angel_0", "ally_hound_remnant_1"], 90.0, "ally pair should keep 90 spacing")
-	_assert_min_pair_distance(resolved, ["enemy_wandering_demon_0", "enemy_wandering_demon_1"], 90.0, "enemy pair should keep 90 spacing")
+	_assert_pair_non_overlap(resolved, ["hero_angel_0", "ally_hound_remnant_1"], "ally pair should not overlap token rectangles")
+	_assert_pair_non_overlap(resolved, ["enemy_wandering_demon_0", "enemy_wandering_demon_1"], "enemy pair should not overlap token rectangles")
+	_assert_rows_within_bounds(resolved, Rect2(0, 0, 640, 360), "resolved tokens should stay within battlefield bounds")
 	_finish()
 
 
-func _assert_min_pair_distance(rows: Array, entity_ids: Array[String], min_distance: float, message: String) -> void:
-	var positions: Array[Vector2] = []
+func _assert_pair_non_overlap(rows: Array, entity_ids: Array[String], message: String) -> void:
+	var rects: Array[Rect2] = []
 	for entity_id in entity_ids:
 		var row := _find_row(rows, entity_id)
 		if row.is_empty():
 			_failures.append("missing row for %s" % entity_id)
 			return
-		positions.append(row.get("position", Vector2.ZERO))
-	if positions.size() != 2:
-		_failures.append("expected two positions for %s" % message)
+		rects.append(Rect2(row.get("position", Vector2.ZERO), TOKEN_SIZE))
+	if rects.size() != 2:
+		_failures.append("expected two token rects for %s" % message)
 		return
-	if positions[0].distance_to(positions[1]) >= min_distance:
+	if not rects[0].intersects(rects[1]):
 		return
-	_failures.append("%s (distance=%.2f)" % [message, positions[0].distance_to(positions[1])])
+	_failures.append("%s (rect_a=%s, rect_b=%s)" % [message, rects[0], rects[1]])
+
+
+func _assert_rows_within_bounds(rows: Array, bounds: Rect2, message: String) -> void:
+	for row in rows:
+		var rect := Rect2(row.get("position", Vector2.ZERO), TOKEN_SIZE)
+		if rect.position.x < bounds.position.x or rect.position.y < bounds.position.y:
+			_failures.append("%s (rect starts outside bounds: %s)" % [message, rect])
+			return
+		if rect.end.x > bounds.end.x or rect.end.y > bounds.end.y:
+			_failures.append("%s (rect exceeds bounds: %s)" % [message, rect])
+			return
 
 
 func _find_row(rows: Array, entity_id: String) -> Dictionary:
