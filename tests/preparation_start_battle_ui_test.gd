@@ -24,7 +24,24 @@ func _run() -> void:
 
 	var error_label := screen.get_node("Layout/ErrorLabel") as Label
 	assert(error_label != null)
-	assert(not error_label.text.is_empty())
+	assert(error_label.text == "无法开始出战: missing_hero")
+
+	var formation_slot: Node = load("res://scripts/prep/formation_slot.gd").new()
+	formation_slot.call("render", "英雄", "灰烬天使")
+	assert(formation_slot.slot_title == "英雄")
+	assert(formation_slot.value_text == "灰烬天使")
+	formation_slot.free()
+
+	var strategy_slot: Node = load("res://scripts/prep/strategy_slot.gd").new()
+	strategy_slot.call("render", "strat_void_echo", 1)
+	assert(strategy_slot.strategy_id == "strat_void_echo")
+	assert(strategy_slot.strategy_cost == 1)
+	strategy_slot.free()
+
+	var battle_picker: Node = load("res://scripts/prep/battle_picker.gd").new()
+	battle_picker.call("set_selected_battle_id", "battle_void_gate_alpha")
+	assert(battle_picker.selected_battle_id == "battle_void_gate_alpha")
+	battle_picker.free()
 
 	screen.queue_free()
 	await process_frame
