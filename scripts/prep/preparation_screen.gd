@@ -74,7 +74,8 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 func start_battle(selection: Dictionary) -> void:
 	var setup := build_battle_setup(selection)
 	if setup.has("invalid_reason"):
-		error_label.text = "无法开始出战: %s" % String(setup.get("invalid_reason", "unknown"))
+		var invalid_reason := String(setup.get("invalid_reason", "unknown"))
+		error_label.text = "无法开始出战: %s" % _describe_invalid_reason(invalid_reason)
 		return
 	error_label.text = ""
 	var session_state := _session_state()
@@ -136,6 +137,10 @@ func _describe_invalid_reason(invalid_reason: String) -> String:
 			return "请选择英雄"
 		"invalid_ally_count":
 			return "队友数量需要为 3"
+		"missing_ally":
+			return "存在无效队友"
+		"missing_strategy":
+			return "存在无效战技"
 		"missing_battle":
 			return "请选择关卡"
 		"strategy_budget_exceeded":

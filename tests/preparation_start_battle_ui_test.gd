@@ -25,7 +25,8 @@ func _run() -> void:
 	var error_label := screen.get_node("Layout/ErrorLabel") as Label
 	assert(error_label != null)
 	assert(not error_label.text.is_empty())
-	assert(error_label.text.find("missing_hero") != -1)
+	assert(error_label.text.find("无法开始出战") != -1)
+	assert(error_label.text.find("请选择英雄") != -1)
 
 	var formation_slot: Node = load("res://scripts/prep/formation_slot.gd").new()
 	formation_slot.call("render", "英雄", "灰烬天使")
