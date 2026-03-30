@@ -86,7 +86,8 @@ func _create_entity(unit_id: String, side: String, unit_def: Dictionary, index: 
 		"attack_power": float(unit_def.get("attack_power", 3.0)),
 		"attack_speed": float(unit_def.get("attack_speed", 1.0)),
 		"attack_range": float(unit_def.get("attack_range", 1.0)),
-		"move_speed": float(unit_def.get("move_speed", 6.0))
+		"move_speed": float(unit_def.get("move_speed", 6.0)),
+		"position": _initial_position(side, index)
 	}
 
 
@@ -100,3 +101,11 @@ func _fallback_enemy_def(enemy_id: String) -> Dictionary:
 		"attack_range": 1.0,
 		"move_speed": 8.0
 	}
+
+
+func _initial_position(side: String, index: int) -> Vector2:
+	if side == "enemy":
+		return Vector2(1500.0, 260.0 + float(index) * 90.0)
+	if side == "hero":
+		return Vector2(320.0, 280.0)
+	return Vector2(260.0, 380.0 + float(index) * 90.0)
