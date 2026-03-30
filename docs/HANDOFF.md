@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-`GodlingBattle` 已完成 Phase1-Phase5、Phase6、Phase7、Phase8、Phase9、Phase10、Phase11（Task1-Task2 完成）、Phase12（Task1 完成）、Phase13（Task1-Task4 完成），当前主流程为：
+`GodlingBattle` 已完成 Phase1-Phase5、Phase6、Phase7、Phase8、Phase9、Phase10、Phase11（Task1-Task2 完成）、Phase12（Task1 完成）、Phase13（Task1-Task4 完成）、Phase14（Task1-Task5 完成），当前主流程为：
 
-`出战前准备（可操作） -> 自动观战（可暂停/倍速） -> 结果结算（可再战/返回）`
+`出战前准备（可操作） -> 自动观战（四象限 UI / 可暂停 / 倍速 / 战报联动） -> 结果结算（可再战/返回）`
 
 整体进度：
 
@@ -21,6 +21,7 @@
 - Phase11（benchmark 导出与门禁接入）：已完成（Task1-Task2）
 - Phase12（CI benchmark 远端门禁接入）：已完成（Task1）
 - Phase13（结果页中文化兜底 + 观战双层战报中心）：已完成（Task1-Task4）
+- Phase14（Observe 四象限战斗 UI）：已完成（Task1-Task5）
 
 > 文档唯一性：全局进度只在本文件维护；其他文档仅引用。规则见 [文档唯一性约定.md](./文档唯一性约定.md)。
 
@@ -458,10 +459,78 @@
 - `5e2b12a`（feat: add dual-layer observe battle report center）
 - `0342141`（fix: sync observe overview progress and empty-state text）
 
+## 本次改动（2026-03-31，Phase14 Task1-Task5，当前工作区）
+
+本次完成了 Phase14（Observe 四象限战斗 UI）：
+
+- Task1（四象限骨架与可读性基线）：
+  - `observe_screen.tscn` 引入 `LayoutRoot -> LeftColumn/RightColumn`
+  - 左侧拆分为 `BattlefieldPanel + StrategyPanel`，右侧拆分为 `AliveRosterPanel + BattleLogPanel`
+  - 新增回归：
+    - `tests/observe_quadrant_layout_test.gd`
+    - `tests/observe_readability_font_size_test.gd`
+- Task2（战场非重叠与敌方命名兜底）：
+  - 新增 `scripts/observe/battlefield_layout_solver.gd`
+  - Observe 战场快照接入非重叠布局解算
+  - 新增回归：
+    - `tests/observe_battlefield_non_overlap_test.gd`
+    - `tests/runtime_enemy_name_fallback_test.gd`
+- Task3（死亡标记与战技卡片运行时）：
+  - `TokenView` 接入死亡 linger 标记与受击/受效状态
+  - 新增 `strategy_card_view` 场景与 Observe 战技卡片运行时刷新
+  - 新增回归：
+    - `tests/token_view_death_marker_test.gd`
+    - `tests/observe_strategy_card_runtime_test.gd`
+- Task4（右侧名册/战斗日志联动）：
+  - Observe 右上象限接入存活名册
+  - Observe 右下象限接入最近战斗日志
+  - 新增回归：`tests/observe_roster_log_panel_test.gd`
+- Task5（回归收口与无障碍守卫）：
+  - accessibility/map smoke 测试切换到四象限层级路径
+  - 保留 `observe_screen` 兼容 helper：`get_tick_text`、`get_event_text`、`get_strategy_cast_text`
+  - `BattleMap`、`TokenHost`、`HudRoot` 归属到 `BattlefieldPanel`
+  - 战斗日志面板补齐 `BattleLogScroll`
+  - 更新回归：
+    - `tests/observe_ui_interaction_accessibility_test.gd`
+    - `tests/observe_map_view_smoke_test.gd`
+    - `tests/observe_layer_hud_test.gd`
+
+对应新增计划文档：
+
+- `docs/superpowers/plans/2026-03-30-godlingbattle-phase14-observe-quadrant-battle-ui.md`
+
 ## 验证结果（本次）
 
-- 全量测试：`tests/*.gd` 共 56 项，`56/56` 通过
-- 主仓状态：当前工作区为阶段性开发状态（含多项未提交改动）
+- Observe 回归：`tests/observe_*.gd` 共 22 项，`22/22` 通过
+- 全量测试：`tests/*.gd` 共 67 项，`67/67` 通过
+- 当前工作区状态：Phase14 Task5 收口完成，可进入下一阶段规划
+
+## 本次改动（2026-03-31，Phase14 Task5 代码质量收口补丁，当前工作区）
+
+针对 Task5 代码质量审查提出的 fallback host 粘连风险，补充了最小修复与回归断言：
+
+- `observe_screen.gd`：
+  - `_ensure_token_host` / `_ensure_hud` / `_ensure_map` 改为每次重新解析 battlefield host
+  - 若节点已存在且 parent 不匹配，自动 `reparent` 到 `BattlefieldPanel`
+  - 恢复后统一重置 `Control.PRESET_FULL_RECT`，避免坐标系/锚点残留
+  - `BattleMap` 恢复后继续保持在底层渲染顺序（`move_child(..., 0)`）
+- `observe_layer_hud_test.gd`：
+  - 新增“先 fallback 到 root，再恢复到 BattlefieldPanel”的两阶段回归
+  - 新增迁移后 full-rect 锚点与 offset 断言
+  - 新增恢复后 `BattleMap < TokenHost < HudRoot` 层级顺序断言
+
+对应提交：
+
+- `25d5ebf`（fix: reconcile observe battlefield host fallback attachments）
+
+验证结果（当前工作区）：
+
+- 指定回归：
+  - `tests/observe_ui_interaction_accessibility_test.gd` 通过
+  - `tests/observe_map_view_smoke_test.gd` 通过
+  - `tests/observe_layer_hud_test.gd` 通过
+- Observe 回归：`tests/observe_*.gd` 共 22 项，`22/22` 通过
+- 全量测试：`tests/*.gd` 共 67 项，`67/67` 通过
 
 ## 当前唯一依据
 
@@ -495,8 +564,9 @@
 26. [2026-03-30-godlingbattle-phase12-ci-benchmark-gate.md](./superpowers/plans/2026-03-30-godlingbattle-phase12-ci-benchmark-gate.md)
 27. [2026-03-30-godlingbattle-battle-report-center-design.md](./superpowers/specs/2026-03-30-godlingbattle-battle-report-center-design.md)
 28. [2026-03-30-godlingbattle-phase13-battle-report-center.md](./superpowers/plans/2026-03-30-godlingbattle-phase13-battle-report-center.md)
+29. [2026-03-30-godlingbattle-phase14-observe-quadrant-battle-ui.md](./superpowers/plans/2026-03-30-godlingbattle-phase14-observe-quadrant-battle-ui.md)
 
-## 下一阶段建议（Phase14）
+## 下一阶段建议（Phase15）
 
 建议优先推进一件事：
 
@@ -507,7 +577,7 @@
 1. `git checkout main && git pull`
 2. 先读 [文档唯一性约定.md](./文档唯一性约定.md)（明确哪些文档可以更新状态）
 3. 再读 [项目概览.md](./项目概览.md) 与 [实施计划导读.md](./实施计划导读.md)
-4. 基于 [2026-03-30-godlingbattle.md](./superpowers/plans/2026-03-30-godlingbattle.md) 产出 phase14 计划
+4. 基于 [2026-03-30-godlingbattle.md](./superpowers/plans/2026-03-30-godlingbattle.md) 与 [2026-03-30-godlingbattle-phase14-observe-quadrant-battle-ui.md](./superpowers/plans/2026-03-30-godlingbattle-phase14-observe-quadrant-battle-ui.md) 产出 phase15 计划
 5. 先从 Observe 战报中心可视化增强（关键标签 + 阶段汇总）开始执行，并在完成后只更新本文件状态
 
 ## 最小验证命令
@@ -520,7 +590,7 @@
 
 ## 明天接着开工时可直接对 Codex 说的话
 
-`请先阅读 docs/HANDOFF.md、docs/项目概览.md、docs/实施计划导读.md，然后基于当前进度继续推进 phase14（Observe 战报中心可视化增强）。`
+`请先阅读 docs/HANDOFF.md、docs/项目概览.md、docs/实施计划导读.md，然后基于当前进度继续推进 phase15（Observe 战报中心可视化增强）。`
 
 ## 提醒
 

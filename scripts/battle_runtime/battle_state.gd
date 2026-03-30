@@ -100,7 +100,7 @@ func _create_entity(unit_id: String, side: String, unit_def: Dictionary, index: 
 func _fallback_enemy_def(enemy_id: String) -> Dictionary:
 	return {
 		"unit_id": enemy_id,
-		"display_name": "敌方单位",
+		"display_name": "未知敌方单位",
 		"max_hp": 30.0,
 		"attack_power": 3.0,
 		"attack_speed": 1.0,
