@@ -18,18 +18,12 @@
 
 ## 当前状态
 
-当前仓库已完成：
+当前仓库已完成第一阶段主流程打通：
 
-- 项目方向确认
-- 设计文档确认
-- 实现计划确认
-- 中文接力文档整理
-
-当前尚未开始：
-
-- 真正的 Godot 项目骨架创建
-- 运行时代码实现
-- 场景与 UI 落地
+- 已创建并可启动 `GodlingBattle` Godot 项目
+- 已落地基础数据层与测试包导出工具
+- 已打通 `出战前准备 -> 自动观战 -> 结果结算 -> 返回出战前准备`
+- 已补齐 headless 基础测试（内容、准备、runtime、观战、结果、导出）
 
 ## 先看哪些文件
 
@@ -40,18 +34,21 @@
 3. [docs/实施计划导读.md](docs/%E5%AE%9E%E6%96%BD%E8%AE%A1%E5%88%92%E5%AF%BC%E8%AF%BB.md)
 4. [docs/superpowers/specs/2026-03-30-godlingbattle-design.md](docs/superpowers/specs/2026-03-30-godlingbattle-design.md)
 5. [docs/superpowers/plans/2026-03-30-godlingbattle.md](docs/superpowers/plans/2026-03-30-godlingbattle.md)
+6. [docs/superpowers/plans/2026-03-30-godlingbattle-phase2-runtime.md](docs/superpowers/plans/2026-03-30-godlingbattle-phase2-runtime.md)
 
 ## 下一步
 
-下一步从实现计划的 `Task 1` 开始，先把这个目录真正搭成一个可启动的 Godot 项目：
+下一步建议进入第二阶段：在保持现有主流程稳定的前提下，补齐 runtime 与观战/结算层的“产品级最小闭环”：
 
-- 创建 `project.godot`
-- 复制 `icon.svg`
-- 创建主场景
-- 创建基础 autoload
+- 让 runtime 真正从 `battle_setup + content` 驱动实体与结算
+- 补齐事件 warning/response/生效的最小规则闭环
+- 让观战层消费 timeline，而不是仅计算后直接跳转
+- 让结果页展示结构化战报字段（survivors/casualties/events/strategies）
 
 ## 约定
 
 - 新项目保持独立，不要把新系统文件再写回旧 `Godling`
 - 首期不做混合交互战斗
 - 统一使用术语 `出战前准备`，不要写成“远征前准备”
+- Godot 元数据文件 `*.uid` 与资源导入配置 `*.import` 需纳入版本管理
+- 继续忽略 `.godot/` 与 `.import/` 目录缓存，不提交引擎缓存产物
