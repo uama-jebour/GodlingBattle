@@ -36,15 +36,20 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 	var ally_ids: Array = selection.get("ally_ids", [])
 	var strategy_ids: Array = selection.get("strategy_ids", [])
 	var battle_id := String(selection.get("battle_id", ""))
+	var battle_content := _battle_content()
 	if hero_id.is_empty():
 		return {"invalid_reason": "missing_hero"}
 	if ally_ids.size() != 3:
 		return {"invalid_reason": "invalid_ally_count"}
-	if not _is_known_battle(battle_id):
+	if battle_id.is_empty():
+		return {"invalid_reason": "missing_battle"}
+	if battle_content != null and battle_content.get_battle(battle_id).is_empty():
 		return {"invalid_reason": "missing_battle"}
 	var total_cost := 0
 	for strategy_id in strategy_ids:
-		total_cost += _strategy_cost(String(strategy_id))
+		if battle_content == null:
+			continue
+		total_cost += int(battle_content.get_strategy(String(strategy_id)).get("cost", 0))
 	if total_cost > DEFAULT_STRATEGY_BUDGET:
 		return {"invalid_reason": "strategy_budget_exceeded"}
 	return {
@@ -134,26 +139,28 @@ func _on_start_pressed() -> void:
 
 
 func _session_state() -> Node:
-	return get_node_or_null("/root/SessionState")
+	var root := _root_node()
+	if root == null:
+		return null
+	return root.get_node_or_null("SessionState")
 
 
 func _app_router() -> Node:
-	return get_node_or_null("/root/AppRouter")
+	var root := _root_node()
+	if root == null:
+		return null
+	return root.get_node_or_null("AppRouter")
 
 
-func _is_known_battle(battle_id: String) -> bool:
-	return battle_id == "battle_void_gate_alpha"
+func _battle_content() -> Node:
+	var root := _root_node()
+	if root == null:
+		return null
+	return root.get_node_or_null("BattleContent")
 
 
-func _strategy_cost(strategy_id: String) -> int:
-	match strategy_id:
-		"strat_void_echo":
-			return 1
-		"strat_chill_wave":
-			return 3
-		"strat_counter_demon_summon":
-			return 2
-		"strat_nuclear_strike":
-			return 6
-		_:
-			return 0
+func _root_node() -> Node:
+	var main_loop := Engine.get_main_loop()
+	if main_loop is SceneTree:
+		return (main_loop as SceneTree).root
+	return null

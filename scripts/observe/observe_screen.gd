@@ -2,6 +2,7 @@ extends Control
 
 const RUNNER := preload("res://scripts/battle_runtime/battle_runner.gd")
 const TOKEN_VIEW_SCENE := preload("res://scenes/observe/token_view.tscn")
+const BATTLE_MAP_SCENE := preload("res://scenes/observe/battle_map_view.tscn")
 const FRAME_STEP_SECONDS := 0.05
 
 var _timeline: Array = []
@@ -71,9 +72,10 @@ func play_battle(setup: Dictionary) -> void:
 func apply_timeline_frame(frame: Dictionary) -> void:
 	_current_tick = int(frame.get("tick", 0))
 	_current_entities = frame.get("entities", []).duplicate(true)
-	sync_token_views(build_token_snapshot())
+	var snapshot := build_token_snapshot()
+	sync_token_views(snapshot)
 	_ensure_map()
-	_battle_map.call("set_snapshot", build_token_snapshot())
+	_battle_map.call("set_snapshot", snapshot)
 	update_hud_for_tick(_current_tick, _event_rows)
 
 
@@ -232,10 +234,11 @@ func _ensure_hud() -> void:
 func _ensure_map() -> void:
 	if _battle_map != null:
 		return
-	_battle_map = preload("res://scenes/observe/battle_map_view.tscn").instantiate()
+	_battle_map = BATTLE_MAP_SCENE.instantiate()
 	_battle_map.name = "BattleMap"
+	_battle_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_battle_map)
-	_battle_map.move_to_front()
+	move_child(_battle_map, 0)
 
 
 func _layer_for_side(side: String) -> Control:
