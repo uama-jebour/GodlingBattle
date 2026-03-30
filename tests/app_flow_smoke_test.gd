@@ -1,12 +1,69 @@
 extends SceneTree
 
+const APP_ROOT_SCENE := preload("res://scenes/app_root.tscn")
+
 
 func _initialize() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
-	var root: Control = load("res://scripts/observe/observe_screen.gd").new()
-	assert(root.has_method("play_battle"))
-	root.free()
+	var session_state := root.get_node_or_null("SessionState")
+	assert(session_state != null)
+	session_state.battle_setup = {}
+	session_state.clear_runtime()
+
+	var app_root: Control = APP_ROOT_SCENE.instantiate()
+	root.add_child(app_root)
+	await process_frame
+
+	var screen_host := app_root.get_node("ScreenHost") as Control
+	assert(screen_host != null)
+
+	var prep_screen := _current_screen(screen_host)
+	assert(prep_screen != null)
+	assert(prep_screen.name == "PreparationScreen")
+
+	prep_screen.start_battle({
+		"hero_id": "hero_angel",
+		"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+		"strategy_ids": ["strat_void_echo"],
+		"battle_id": "battle_void_gate_alpha",
+		"seed": 20260330
+	})
+	await process_frame
+
+	var observe_screen := _current_screen(screen_host)
+	assert(observe_screen != null)
+	assert(observe_screen.has_method("play_battle"))
+
+	var guard := 0
+	while guard < 300:
+		var current := _current_screen(screen_host)
+		if current != null and current.name == "ResultScreen":
+			break
+		observe_screen._process(0.10)
+		await process_frame
+		guard += 1
+
+	var result_screen := _current_screen(screen_host)
+	assert(result_screen != null)
+	assert(result_screen.name == "ResultScreen")
+
+	result_screen.return_to_preparation()
+	await process_frame
+
+	var prep_again := _current_screen(screen_host)
+	assert(prep_again != null)
+	assert(prep_again.name == "PreparationScreen")
+
+	app_root.queue_free()
+	await process_frame
 	quit(0)
+
+
+func _current_screen(host: Control) -> Node:
+	for child in host.get_children():
+		if child is Node and not child.is_queued_for_deletion():
+			return child
+	return null
