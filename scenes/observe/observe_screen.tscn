@@ -14,22 +14,36 @@ script = ExtResource("1")
 [node name="PlaybackPanel" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 10
-anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -760.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 104.0
+theme_override_constants/separation = 14
+
+[node name="PlaybackPanelBg" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
 offset_top = 16.0
 offset_right = -16.0
-offset_bottom = 52.0
-grow_horizontal = 0
-theme_override_constants/separation = 8
+offset_bottom = 112.0
+mouse_filter = 2
+z_index = -1
+color = Color(0.105882, 0.137255, 0.176471, 0.88)
 
 [node name="PauseButton" type="Button" parent="PlaybackPanel"]
 layout_mode = 2
+custom_minimum_size = Vector2(180, 72)
 text = "暂停"
+theme_override_font_sizes/font_size = 30
 
 [node name="StepBackButton" type="Button" parent="PlaybackPanel"]
 layout_mode = 2
-text = "-10f"
+custom_minimum_size = Vector2(220, 72)
+text = "后退10帧"
+theme_override_font_sizes/font_size = 28
 
 [node name="ProgressSlider" type="HSlider" parent="PlaybackPanel"]
 layout_mode = 2
@@ -38,35 +52,90 @@ step = 1.0
 
 [node name="StepForwardButton" type="Button" parent="PlaybackPanel"]
 layout_mode = 2
-text = "+10f"
+custom_minimum_size = Vector2(220, 72)
+text = "前进10帧"
+theme_override_font_sizes/font_size = 28
 
 [node name="SpeedSelect" type="OptionButton" parent="PlaybackPanel"]
 layout_mode = 2
+custom_minimum_size = Vector2(180, 72)
+theme_override_font_sizes/font_size = 28
 
 [node name="EventPanel" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 1
+anchors_preset = 9
+anchor_left = 1.0
 anchor_right = 1.0
-offset_left = 20.0
-offset_top = 16.0
-offset_right = -780.0
-offset_bottom = 100.0
-theme_override_constants/separation = 6
+offset_left = -840.0
+offset_top = 132.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="EventPanelBg" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -848.0
+offset_top = 124.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+z_index = -1
+color = Color(0.113725, 0.14902, 0.105882, 0.9)
 
 [node name="EventFilterSelect" type="OptionButton" parent="EventPanel"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 66)
+theme_override_font_sizes/font_size = 26
 
 [node name="EventTimelineZoomSelect" type="OptionButton" parent="EventPanel"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 66)
+theme_override_font_sizes/font_size = 26
 
 [node name="EventTimelineDensitySelect" type="OptionButton" parent="EventPanel"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 66)
+theme_override_font_sizes/font_size = 26
+
+[node name="BattleOverviewLabel" type="Label" parent="EventPanel"]
+layout_mode = 2
+autowrap_mode = 2
+text = "战况总览："
+theme_override_font_sizes/font_size = 24
+
+[node name="TickSummaryLabel" type="Label" parent="EventPanel"]
+layout_mode = 2
+autowrap_mode = 2
+text = "本帧动态："
+theme_override_font_sizes/font_size = 24
+
+[node name="DetailToggleButton" type="Button" parent="EventPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 58)
+text = "展开战术明细"
+theme_override_font_sizes/font_size = 24
+
+[node name="DetailLogList" type="ItemList" parent="EventPanel"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 180)
+theme_override_font_sizes/font_size = 22
 
 [node name="EventTimelineLabel" type="Label" parent="EventPanel"]
 layout_mode = 2
 autowrap_mode = 2
 text = "事件标记：无"
+theme_override_font_sizes/font_size = 24
 
 [node name="EventMarkerList" type="ItemList" parent="EventPanel"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 64)
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 220)
+theme_override_font_sizes/font_size = 24

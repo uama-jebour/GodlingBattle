@@ -3,6 +3,8 @@ extends Control
 const RUNNER := preload("res://scripts/battle_runtime/battle_runner.gd")
 const TOKEN_VIEW_SCENE := preload("res://scenes/observe/token_view.tscn")
 const BATTLE_MAP_SCENE := preload("res://scenes/observe/battle_map_view.tscn")
+const DISPLAY_NAME_RESOLVER := preload("res://scripts/ui/display_name_resolver.gd")
+const BATTLE_REPORT_FORMATTER := preload("res://scripts/observe/battle_report_formatter.gd")
 const FRAME_STEP_SECONDS := 0.05
 const JUMP_FRAME_DELTA := 10
 
@@ -24,7 +26,10 @@ var _event_label: Label
 var _strategy_cast_label: Label
 var _token_views: Dictionary = {}
 var _event_rows: Array = []
+var _battle_result: Dictionary = {}
 var _battle_map: Control
+var _display_name_resolver := DISPLAY_NAME_RESOLVER.new()
+var _battle_report_formatter := BATTLE_REPORT_FORMATTER.new()
 @onready var _pause_button: Button = $PlaybackPanel/PauseButton
 @onready var _step_back_button: Button = $PlaybackPanel/StepBackButton
 @onready var _progress_slider: HSlider = $PlaybackPanel/ProgressSlider
@@ -33,6 +38,10 @@ var _battle_map: Control
 @onready var _event_filter_select: OptionButton = $EventPanel/EventFilterSelect
 @onready var _event_timeline_zoom_select: OptionButton = $EventPanel/EventTimelineZoomSelect
 @onready var _event_timeline_density_select: OptionButton = $EventPanel/EventTimelineDensitySelect
+@onready var _battle_overview_label: Label = $EventPanel/BattleOverviewLabel
+@onready var _tick_summary_label: Label = $EventPanel/TickSummaryLabel
+@onready var _detail_toggle_button: Button = $EventPanel/DetailToggleButton
+@onready var _detail_log_list: ItemList = $EventPanel/DetailLogList
 @onready var _event_timeline_label: Label = $EventPanel/EventTimelineLabel
 @onready var _event_marker_list: ItemList = $EventPanel/EventMarkerList
 var _syncing_progress_slider := false
@@ -40,21 +49,30 @@ var _event_filter_type := "all"
 var _event_timeline_zoom_step := 1
 var _event_timeline_density_limit := 64
 var _event_marker_ticks: Array[int] = []
+var _detail_log_expanded := false
 
 
 func _ready() -> void:
 	_bind_playback_controls()
 	_bind_event_filter_controls()
+	_bind_battle_report_controls()
+	_detail_log_expanded = false
+	_refresh_detail_log_visibility()
 	var session_state := _session_state()
 	if session_state == null or session_state.battle_setup.is_empty():
 		_event_rows = []
+		_battle_result = {}
 		_refresh_event_timeline()
+		_refresh_battle_overview()
+		_refresh_tick_summary(_current_tick, _event_rows)
+		_refresh_detail_log(_current_tick, _event_rows)
 		_refresh_progress_slider()
 		_refresh_playback_controls()
 		return
 	if session_state.last_timeline.is_empty():
 		play_battle(session_state.battle_setup)
-	_event_rows = session_state.last_battle_result.get("log_entries", []).duplicate(true)
+	_battle_result = session_state.last_battle_result.duplicate(true)
+	_event_rows = _battle_result.get("log_entries", []).duplicate(true)
 	_ensure_token_host()
 	_ensure_hud()
 	_ensure_map()
@@ -67,6 +85,9 @@ func _ready() -> void:
 	_select_speed_by_value(_playback_speed)
 	_is_playing = not _timeline.is_empty()
 	_refresh_event_timeline()
+	_refresh_battle_overview()
+	_refresh_tick_summary(_current_tick, _event_rows)
+	_refresh_detail_log(_current_tick, _event_rows)
 	_refresh_progress_slider()
 	_refresh_playback_controls()
 	if _is_playing:
@@ -96,11 +117,11 @@ func _process(delta: float) -> void:
 
 func _bind_playback_controls() -> void:
 	if _speed_select.item_count == 0:
-		_speed_select.add_item("1x", 0)
+		_speed_select.add_item("1倍速", 0)
 		_speed_select.set_item_metadata(0, 1.0)
-		_speed_select.add_item("2x", 1)
+		_speed_select.add_item("2倍速", 1)
 		_speed_select.set_item_metadata(1, 2.0)
-		_speed_select.add_item("4x", 2)
+		_speed_select.add_item("4倍速", 2)
 		_speed_select.set_item_metadata(2, 4.0)
 	if not _pause_button.pressed.is_connected(_on_pause_pressed):
 		_pause_button.pressed.connect(_on_pause_pressed)
@@ -126,11 +147,11 @@ func _bind_event_filter_controls() -> void:
 		_event_filter_select.set_item_metadata(3, "strategy_cast")
 		_event_filter_select.select(0)
 	if _event_timeline_zoom_select.item_count == 0:
-		_event_timeline_zoom_select.add_item("时间轴缩放：1x", 0)
+		_event_timeline_zoom_select.add_item("时间轴缩放：1倍", 0)
 		_event_timeline_zoom_select.set_item_metadata(0, 1)
-		_event_timeline_zoom_select.add_item("时间轴缩放：2x", 1)
+		_event_timeline_zoom_select.add_item("时间轴缩放：2倍", 1)
 		_event_timeline_zoom_select.set_item_metadata(1, 2)
-		_event_timeline_zoom_select.add_item("时间轴缩放：5x", 2)
+		_event_timeline_zoom_select.add_item("时间轴缩放：5倍", 2)
 		_event_timeline_zoom_select.set_item_metadata(2, 5)
 		_event_timeline_zoom_select.select(0)
 	if _event_timeline_density_select.item_count == 0:
@@ -149,6 +170,14 @@ func _bind_event_filter_controls() -> void:
 		_event_timeline_density_select.item_selected.connect(_on_event_timeline_density_selected)
 	if not _event_marker_list.item_selected.is_connected(_on_event_marker_selected):
 		_event_marker_list.item_selected.connect(_on_event_marker_selected)
+
+
+func _bind_battle_report_controls() -> void:
+	if _detail_toggle_button == null:
+		return
+	if not _detail_toggle_button.pressed.is_connected(_on_detail_toggle_pressed):
+		_detail_toggle_button.pressed.connect(_on_detail_toggle_pressed)
+	_refresh_detail_log_visibility()
 
 
 func _refresh_playback_controls() -> void:
@@ -208,6 +237,11 @@ func _on_event_marker_selected(index: int) -> void:
 	if index < 0 or index >= _event_marker_ticks.size():
 		return
 	_seek_to_tick(_event_marker_ticks[index])
+
+
+func _on_detail_toggle_pressed() -> void:
+	_detail_log_expanded = not _detail_log_expanded
+	_refresh_detail_log(_current_tick, _event_rows)
 
 
 func _on_step_back_pressed() -> void:
@@ -374,20 +408,21 @@ func get_token_parent_name(entity_id: String) -> String:
 
 func update_hud_for_tick(tick: int, event_rows: Array) -> void:
 	_ensure_hud()
-	_tick_label.text = "Tick %d" % tick
+	_tick_label.text = "第%d帧" % tick
 	var messages: Array[String] = []
-	for row in _filter_event_rows(event_rows):
+	var filtered_rows := _filter_event_rows(event_rows)
+	for row in filtered_rows:
 		if int(row.get("tick", -1)) != tick:
 			continue
-		messages.append("事件 %s:%s" % [
-			str(row.get("type", "")),
-			str(row.get("event_id", row.get("entity_id", "")))
-		])
+		messages.append(_build_event_row_text(row))
 	if messages.is_empty():
 		_event_label.text = ""
 	else:
 		_event_label.text = " | ".join(messages)
-	_strategy_cast_label.text = _build_strategy_cast_text(tick, event_rows)
+	_strategy_cast_label.text = _build_strategy_cast_text(tick, filtered_rows)
+	_refresh_tick_summary(tick, event_rows)
+	_refresh_detail_log(tick, event_rows)
+	_refresh_battle_overview()
 
 
 func get_tick_text() -> String:
@@ -413,6 +448,22 @@ func get_event_timeline_text() -> String:
 
 func get_event_timeline_marker_count() -> int:
 	return _event_marker_ticks.size()
+
+
+func get_battle_overview_text() -> String:
+	if _battle_overview_label == null:
+		return ""
+	return _battle_overview_label.text
+
+
+func get_tick_summary_text() -> String:
+	if _tick_summary_label == null:
+		return ""
+	return _tick_summary_label.text
+
+
+func get_detail_log_visible() -> bool:
+	return _detail_log_list != null and _detail_log_list.visible
 
 
 func _hp_ratio(entity: Dictionary) -> float:
@@ -455,21 +506,36 @@ func _ensure_hud() -> void:
 	_hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_hud_root)
 
+	var hud_bg := ColorRect.new()
+	hud_bg.name = "HudBg"
+	hud_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_bg.position = Vector2(14, 14)
+	hud_bg.size = Vector2(1400, 170)
+	hud_bg.color = Color(0.05, 0.08, 0.11, 0.78)
+	_hud_root.add_child(hud_bg)
+
 	_tick_label = Label.new()
 	_tick_label.name = "TickLabel"
 	_tick_label.position = Vector2(20, 20)
-	_tick_label.text = "Tick 0"
+	_tick_label.text = "第0帧"
+	_tick_label.add_theme_font_size_override("font_size", 42)
 	_hud_root.add_child(_tick_label)
 
 	_event_label = Label.new()
 	_event_label.name = "EventLabel"
-	_event_label.position = Vector2(20, 48)
+	_event_label.position = Vector2(24, 72)
+	_event_label.custom_minimum_size = Vector2(1360, 42)
+	_event_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_event_label.add_theme_font_size_override("font_size", 28)
 	_event_label.text = ""
 	_hud_root.add_child(_event_label)
 
 	_strategy_cast_label = Label.new()
 	_strategy_cast_label.name = "StrategyCastLabel"
-	_strategy_cast_label.position = Vector2(20, 76)
+	_strategy_cast_label.position = Vector2(24, 114)
+	_strategy_cast_label.custom_minimum_size = Vector2(1360, 42)
+	_strategy_cast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_strategy_cast_label.add_theme_font_size_override("font_size", 28)
 	_strategy_cast_label.text = ""
 	_hud_root.add_child(_strategy_cast_label)
 
@@ -512,9 +578,9 @@ func _refresh_event_markers(markers: Array) -> void:
 			continue
 		_event_marker_ticks.append(tick)
 		if tick_end > tick:
-			_event_marker_list.add_item("Tick %d~%d %s" % [tick, tick_end, event_type])
+			_event_marker_list.add_item("第%d~%d帧 %s" % [tick, tick_end, _event_type_display_name(event_type)])
 		else:
-			_event_marker_list.add_item("Tick %d %s" % [tick, event_type])
+			_event_marker_list.add_item("第%d帧 %s" % [tick, _event_type_display_name(event_type)])
 
 
 func _filter_event_rows(rows: Array) -> Array:
@@ -576,10 +642,10 @@ func _build_event_timeline_text(markers: Array) -> String:
 		var tick_end := int(row.get("tick_end", tick))
 		var event_type := str(row.get("type", ""))
 		var count := int(row.get("count", 1))
-		var tick_text := "t%d" % tick
+		var tick_text := "第%d帧" % tick
 		if tick_end > tick:
-			tick_text = "t%d~%d" % [tick, tick_end]
-		var marker := "%s %s" % [tick_text, event_type]
+			tick_text = "第%d~%d帧" % [tick, tick_end]
+		var marker := "%s %s" % [tick_text, _event_type_display_name(event_type)]
 		if count > 1:
 			marker = "%s x%d" % [marker, count]
 		marker_texts.append(marker)
@@ -593,10 +659,108 @@ func _build_strategy_cast_text(tick: int, rows: Array) -> String:
 			continue
 		if str(row.get("type", "")) != "strategy_cast":
 			continue
-		strategy_ids.append(str(row.get("strategy_id", "")))
+		strategy_ids.append(_strategy_display_name(str(row.get("strategy_id", ""))))
 	if strategy_ids.is_empty():
 		return ""
 	return "战技施放：%s" % " | ".join(strategy_ids)
+
+
+func _refresh_battle_overview() -> void:
+	if _battle_overview_label == null:
+		return
+	var victory_text := "未知"
+	if not _battle_result.is_empty():
+		victory_text = "胜利" if bool(_battle_result.get("victory", false)) else "失败"
+	var survivors_count := int((_battle_result.get("survivors", []) as Array).size())
+	var casualties_count := int((_battle_result.get("casualties", []) as Array).size())
+	var triggered_events_count := int((_battle_result.get("triggered_events", []) as Array).size())
+	var strategy_cast_count := _count_strategy_casts(_event_rows)
+	var alive_counts := _count_alive_sides(_current_entities)
+	var current_index := maxi(0, _current_frame_index)
+	var total_frames := _timeline.size()
+	_battle_overview_label.text = "战况总览｜胜负：%s｜进度：%d/%d帧\n当前存活：我方%d 敌方%d｜阵亡：%d｜触发事件：%d｜战技施放：%d" % [
+		victory_text,
+		current_index,
+		total_frames,
+		int(alive_counts.get("ally_team", 0)),
+		int(alive_counts.get("enemy", 0)),
+		casualties_count,
+		triggered_events_count,
+		strategy_cast_count
+	]
+	if survivors_count > 0 and total_frames == 0:
+		_battle_overview_label.text += "\n结果存活数：%d" % survivors_count
+
+
+func _count_strategy_casts(rows: Array) -> int:
+	var count := 0
+	for row in rows:
+		if str(row.get("type", "")) == "strategy_cast":
+			count += 1
+	return count
+
+
+func _count_alive_sides(entities: Array) -> Dictionary:
+	var counts := {
+		"ally_team": 0,
+		"enemy": 0
+	}
+	for entity in entities:
+		if not bool(entity.get("alive", false)):
+			continue
+		var side := str(entity.get("side", ""))
+		if side == "enemy":
+			counts["enemy"] = int(counts.get("enemy", 0)) + 1
+		else:
+			counts["ally_team"] = int(counts.get("ally_team", 0)) + 1
+	return counts
+
+
+func _refresh_tick_summary(tick: int, event_rows: Array) -> void:
+	if _tick_summary_label == null:
+		return
+	_tick_summary_label.text = _build_tick_summary_text(tick, event_rows)
+
+
+func _build_tick_summary_text(tick: int, rows: Array) -> String:
+	return _battle_report_formatter.build_tick_brief(rows, tick, _event_filter_type)
+
+
+func _refresh_detail_log(tick: int, rows: Array) -> void:
+	if _detail_log_list == null:
+		return
+	_detail_log_list.clear()
+	for line in _battle_report_formatter.build_tick_detail(rows, tick, _event_filter_type):
+		_detail_log_list.add_item(String(line))
+	_refresh_detail_log_visibility()
+
+
+func _refresh_detail_log_visibility() -> void:
+	if _detail_toggle_button == null or _detail_log_list == null:
+		return
+	_detail_toggle_button.text = "收起战术明细" if _detail_log_expanded else "展开战术明细"
+	_detail_log_list.visible = _detail_log_expanded
+
+
+func _build_event_row_text(row: Dictionary) -> String:
+	var event_type := str(row.get("type", ""))
+	match event_type:
+		"strategy_cast":
+			return "%s：%s" % [_event_type_display_name(event_type), _strategy_display_name(str(row.get("strategy_id", "")))]
+		"event_warning":
+			return "%s：%s" % [_event_type_display_name(event_type), _event_display_name(str(row.get("event_id", "")))]
+		"event_resolve":
+			var responded := bool(row.get("responded", false))
+			var respond_text := "已响应" if responded else "未响应"
+			return "%s：%s（%s）" % [_event_type_display_name(event_type), _event_display_name(str(row.get("event_id", ""))), respond_text]
+		"event_unresolved_effect":
+			return "%s：%s" % [_event_type_display_name(event_type), _event_display_name(str(row.get("event_id", "")))]
+		"ally_down", "hero_down", "enemy_down":
+			return "%s：%s" % [_event_type_display_name(event_type), _unit_display_name_from_entity_id(str(row.get("entity_id", "")))]
+		_:
+			if row.has("event_id"):
+				return "%s：%s" % [_event_type_display_name(event_type), _event_display_name(str(row.get("event_id", "")))]
+			return "%s：%s" % [_event_type_display_name(event_type), _unit_display_name_from_entity_id(str(row.get("entity_id", "")))]
 
 
 func _seek_to_tick(target_tick: int) -> void:
@@ -616,3 +780,35 @@ func _session_state() -> Node:
 
 func _app_router() -> Node:
 	return get_node_or_null("/root/AppRouter")
+
+
+func _event_type_display_name(event_type: String) -> String:
+	match event_type:
+		"event_warning":
+			return "事件预警"
+		"event_resolve":
+			return "事件结算"
+		"event_unresolved_effect":
+			return "未响应后果"
+		"strategy_cast":
+			return "战技施放"
+		"ally_down":
+			return "友军倒下"
+		"hero_down":
+			return "英雄倒下"
+		"enemy_down":
+			return "敌方倒下"
+		_:
+			return "其他事件"
+
+
+func _event_display_name(event_id: String) -> String:
+	return _display_name_resolver.event_name(event_id)
+
+
+func _strategy_display_name(strategy_id: String) -> String:
+	return _display_name_resolver.strategy_name(strategy_id)
+
+
+func _unit_display_name_from_entity_id(entity_id: String) -> String:
+	return _display_name_resolver.unit_name_from_entity_id(entity_id)
