@@ -43,6 +43,7 @@ func run(setup: Dictionary) -> Dictionary:
 
 	var victory := false
 	var defeat_reason := "timeout"
+	var status := "completed"
 	if not hero_alive:
 		victory = false
 		defeat_reason = "hero_dead"
@@ -59,10 +60,14 @@ func run(setup: Dictionary) -> Dictionary:
 	return {
 		"timeline": timeline,
 		"result": {
+			"status": status,
 			"victory": victory,
 			"defeat_reason": defeat_reason,
 			"elapsed_seconds": float(state["elapsed_ticks"]) / float(state["tick_rate"]),
 			"survivors": survivors,
+			"casualties": state.get("casualties", []).duplicate(true),
+			"triggered_events": state.get("triggered_events", []).duplicate(true),
+			"triggered_strategies": state.get("triggered_strategies", []).duplicate(true),
 			"log_entries": state.get("log_entries", []).duplicate(true)
 		}
 	}
