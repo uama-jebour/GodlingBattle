@@ -23,6 +23,7 @@ func _run() -> void:
 	await process_frame
 
 	assert(screen.get_node_or_null("Layout/HeadlineLabel") != null)
+	assert(screen.get_node_or_null("Layout/ReplayButton") != null)
 	assert(screen.get_node_or_null("Layout/ReturnButton") != null)
 	assert(not (screen.get_node("Layout/HeadlineLabel") as Label).text.is_empty())
 

@@ -48,6 +48,10 @@ layout_mode = 2
 text = ""
 autowrap_mode = 2
 
+[node name="ReplayButton" type="Button" parent="Layout"]
+layout_mode = 2
+text = "再战一场"
+
 [node name="ReturnButton" type="Button" parent="Layout"]
 layout_mode = 2
 text = "返回出战前准备"

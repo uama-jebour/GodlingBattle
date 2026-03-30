@@ -5,6 +5,7 @@ extends Control
 @onready var _casualty: Label = $Layout/CasualtyLabel
 @onready var _event: Label = $Layout/EventLabel
 @onready var _strategy: Label = $Layout/StrategyLabel
+@onready var _replay_button: Button = $Layout/ReplayButton
 @onready var _return_button: Button = $Layout/ReturnButton
 
 
@@ -26,8 +27,22 @@ func _ready() -> void:
 	_casualty.text = "阵亡: %s" % ", ".join(summary.get("casualty_lines", []))
 	_event.text = "事件: %s" % ", ".join(summary.get("event_lines", []))
 	_strategy.text = "策略: %s" % ", ".join(summary.get("strategy_lines", []))
+	_replay_button.disabled = session_state == null or session_state.battle_setup.is_empty()
+	if not _replay_button.pressed.is_connected(replay_battle):
+		_replay_button.pressed.connect(replay_battle)
 	if not _return_button.pressed.is_connected(return_to_preparation):
 		_return_button.pressed.connect(return_to_preparation)
+
+
+func replay_battle() -> void:
+	var session_state := _session_state()
+	if session_state == null or session_state.battle_setup.is_empty():
+		return_to_preparation()
+		return
+	session_state.clear_runtime()
+	var app_router := _app_router()
+	if app_router != null:
+		app_router.goto_observe()
 
 
 func return_to_preparation() -> void:

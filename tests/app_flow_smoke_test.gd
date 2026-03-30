@@ -50,9 +50,31 @@ func _run() -> void:
 	var result_screen := _current_screen(screen_host)
 	assert(result_screen != null)
 	assert(result_screen.name == "ResultScreen")
+	assert(result_screen.get_node_or_null("Layout/ReplayButton") != null)
 	assert(result_screen.get_node_or_null("Layout/ReturnButton") != null)
 
-	result_screen.return_to_preparation()
+	result_screen.replay_battle()
+	await process_frame
+
+	var observe_replay := _current_screen(screen_host)
+	assert(observe_replay != null)
+	assert(observe_replay.name == "ObserveScreen")
+
+	guard = 0
+	while guard < 300:
+		var replay_current := _current_screen(screen_host)
+		if replay_current != null and replay_current.name == "ResultScreen":
+			break
+		observe_replay._process(0.10)
+		await process_frame
+		guard += 1
+
+	var replay_result := _current_screen(screen_host)
+	assert(replay_result != null)
+	assert(replay_result.name == "ResultScreen")
+	assert(replay_result.get_node_or_null("Layout/ReturnButton") != null)
+
+	replay_result.return_to_preparation()
 	await process_frame
 
 	var prep_again := _current_screen(screen_host)

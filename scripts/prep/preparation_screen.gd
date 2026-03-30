@@ -2,17 +2,25 @@ extends Control
 
 const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 const DEFAULT_STRATEGY_BUDGET := 16
+const DEFAULT_ALLY_IDS := ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"]
+const VOID_ECHO_STRATEGY_ID := "strat_void_echo"
 
 var _current_selection: Dictionary = {
 	"hero_id": "hero_angel",
-	"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
-	"strategy_ids": ["strat_void_echo"],
+	"ally_ids": DEFAULT_ALLY_IDS.duplicate(),
+	"strategy_ids": [VOID_ECHO_STRATEGY_ID],
 	"battle_id": "battle_void_gate_alpha",
 	"seed": 1001
 }
+var _is_syncing_controls := false
 
 @onready var layout: VBoxContainer = $Layout
 @onready var title_label: Label = $Layout/TitleLabel
+@onready var hero_select: OptionButton = $Layout/HeroSelect
+@onready var battle_select: OptionButton = $Layout/BattleSelect
+@onready var seed_input: SpinBox = $Layout/SeedInput
+@onready var strategy_select: CheckBox = $Layout/StrategySelect
+@onready var budget_label: Label = $Layout/BudgetLabel
 @onready var selection_summary: Label = $Layout/SelectionSummary
 @onready var battle_summary: Label = $Layout/BattleSummary
 @onready var error_label: Label = $Layout/ErrorLabel
@@ -21,6 +29,9 @@ var _current_selection: Dictionary = {
 
 func _ready() -> void:
 	title_label.text = "出战前准备"
+	_bind_content_options()
+	_bind_control_events()
+	_apply_selection_to_controls()
 	if not start_battle_button.pressed.is_connected(_on_start_pressed):
 		start_battle_button.pressed.connect(_on_start_pressed)
 	_render_shell()
@@ -29,7 +40,97 @@ func _ready() -> void:
 func set_selection(selection: Dictionary) -> void:
 	_current_selection = selection.duplicate(true)
 	if is_node_ready():
+		_apply_selection_to_controls()
 		_render_shell()
+
+
+func _bind_content_options() -> void:
+	var content: Node = BATTLE_CONTENT.new()
+	hero_select.clear()
+	var hero: Dictionary = content.get_unit("hero_angel")
+	hero_select.add_item(String(hero.get("display_name", "英雄：天使")), 0)
+	hero_select.set_item_metadata(0, "hero_angel")
+	battle_select.clear()
+	var battle: Dictionary = content.get_battle("battle_void_gate_alpha")
+	battle_select.add_item(String(battle.get("display_name", "虚无裂隙·一层")), 0)
+	battle_select.set_item_metadata(0, "battle_void_gate_alpha")
+	var strategy: Dictionary = content.get_strategy(VOID_ECHO_STRATEGY_ID)
+	strategy_select.text = "携带：%s" % String(strategy.get("name", "虚无回响"))
+	content.free()
+
+
+func _bind_control_events() -> void:
+	if not hero_select.item_selected.is_connected(_on_control_changed):
+		hero_select.item_selected.connect(_on_control_changed)
+	if not battle_select.item_selected.is_connected(_on_control_changed):
+		battle_select.item_selected.connect(_on_control_changed)
+	if not seed_input.value_changed.is_connected(_on_seed_changed):
+		seed_input.value_changed.connect(_on_seed_changed)
+	if not strategy_select.toggled.is_connected(_on_strategy_toggled):
+		strategy_select.toggled.connect(_on_strategy_toggled)
+
+
+func _apply_selection_to_controls() -> void:
+	_is_syncing_controls = true
+	_select_option_by_metadata(hero_select, String(_current_selection.get("hero_id", "")))
+	_select_option_by_metadata(battle_select, String(_current_selection.get("battle_id", "")))
+	seed_input.value = float(int(_current_selection.get("seed", 1)))
+	var strategy_ids: Array = _current_selection.get("strategy_ids", [])
+	strategy_select.button_pressed = strategy_ids.has(VOID_ECHO_STRATEGY_ID)
+	_is_syncing_controls = false
+
+
+func _pull_selection_from_controls() -> void:
+	var strategy_ids: Array[String] = []
+	if strategy_select.button_pressed:
+		strategy_ids.append(VOID_ECHO_STRATEGY_ID)
+	var ally_ids: Array = _current_selection.get("ally_ids", [])
+	if ally_ids.size() != DEFAULT_ALLY_IDS.size():
+		ally_ids = DEFAULT_ALLY_IDS.duplicate()
+	_current_selection = {
+		"hero_id": _selected_metadata(hero_select, "hero_angel"),
+		"ally_ids": ally_ids.duplicate(),
+		"strategy_ids": strategy_ids,
+		"battle_id": _selected_metadata(battle_select, "battle_void_gate_alpha"),
+		"seed": int(seed_input.value)
+	}
+
+
+func _select_option_by_metadata(option: OptionButton, value: String) -> void:
+	for index in option.item_count:
+		if String(option.get_item_metadata(index)) == value:
+			option.select(index)
+			return
+	if option.item_count > 0:
+		option.select(0)
+
+
+func _selected_metadata(option: OptionButton, fallback: String) -> String:
+	var selected_index := option.selected
+	if selected_index < 0 or selected_index >= option.item_count:
+		return fallback
+	return String(option.get_item_metadata(selected_index))
+
+
+func _on_control_changed(_index: int) -> void:
+	if _is_syncing_controls:
+		return
+	_pull_selection_from_controls()
+	_render_shell()
+
+
+func _on_seed_changed(_value: float) -> void:
+	if _is_syncing_controls:
+		return
+	_pull_selection_from_controls()
+	_render_shell()
+
+
+func _on_strategy_toggled(_enabled: bool) -> void:
+	if _is_syncing_controls:
+		return
+	_pull_selection_from_controls()
+	_render_shell()
 
 
 func build_battle_setup(selection: Dictionary) -> Dictionary:
@@ -89,6 +190,7 @@ func start_battle(selection: Dictionary) -> void:
 func _render_shell() -> void:
 	var current_selection := _current_selection.duplicate(true)
 	var setup := build_battle_setup(current_selection)
+	budget_label.text = "预算: %d / %d" % [_strategy_total_cost(current_selection), DEFAULT_STRATEGY_BUDGET]
 	selection_summary.text = _format_selection_summary(current_selection)
 	if setup.has("invalid_reason"):
 		var invalid_reason := _describe_invalid_reason(String(setup.get("invalid_reason", "")))
@@ -99,6 +201,15 @@ func _render_shell() -> void:
 	battle_summary.text = _format_battle_summary(setup)
 	error_label.text = ""
 	start_battle_button.disabled = false
+
+
+func _strategy_total_cost(selection: Dictionary) -> int:
+	var content: Node = BATTLE_CONTENT.new()
+	var total := 0
+	for strategy_id in selection.get("strategy_ids", []):
+		total += int(content.get_strategy(String(strategy_id)).get("cost", 0))
+	content.free()
+	return total
 
 
 func _format_selection_summary(current_selection: Dictionary) -> String:

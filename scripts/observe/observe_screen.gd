@@ -11,6 +11,8 @@ var _current_tick := 0
 var _current_entities: Array = []
 var _playback_accumulator := 0.0
 var _is_playing := false
+var _is_paused := false
+var _playback_speed := 1.0
 var _token_host: Control
 var _ally_layer: Control
 var _enemy_layer: Control
@@ -20,11 +22,15 @@ var _event_label: Label
 var _token_views: Dictionary = {}
 var _event_rows: Array = []
 var _battle_map: Control
+@onready var _pause_button: Button = $PlaybackPanel/PauseButton
+@onready var _speed_select: OptionButton = $PlaybackPanel/SpeedSelect
 
 
 func _ready() -> void:
+	_bind_playback_controls()
 	var session_state := _session_state()
 	if session_state == null or session_state.battle_setup.is_empty():
+		_refresh_playback_controls()
 		return
 	if session_state.last_timeline.is_empty():
 		play_battle(session_state.battle_setup)
@@ -35,7 +41,11 @@ func _ready() -> void:
 	_timeline = session_state.last_timeline.duplicate(true)
 	_frame_index = 0
 	_playback_accumulator = 0.0
+	_is_paused = false
+	_playback_speed = 1.0
+	_select_speed_by_value(_playback_speed)
 	_is_playing = not _timeline.is_empty()
+	_refresh_playback_controls()
 	if _is_playing:
 		set_process(true)
 	else:
@@ -45,19 +55,65 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if not _is_playing:
+	if not _is_playing or _is_paused:
 		return
-	_playback_accumulator += delta
+	_playback_accumulator += delta * _playback_speed
 	if _playback_accumulator < FRAME_STEP_SECONDS:
 		return
 	_playback_accumulator = 0.0
 	var finished := advance_playback_step()
 	if finished:
 		_is_playing = false
+		_refresh_playback_controls()
 		set_process(false)
 		var app_router := _app_router()
 		if app_router != null:
 			app_router.goto_result()
+
+
+func _bind_playback_controls() -> void:
+	if _speed_select.item_count == 0:
+		_speed_select.add_item("1x", 0)
+		_speed_select.set_item_metadata(0, 1.0)
+		_speed_select.add_item("2x", 1)
+		_speed_select.set_item_metadata(1, 2.0)
+		_speed_select.add_item("4x", 2)
+		_speed_select.set_item_metadata(2, 4.0)
+	if not _pause_button.pressed.is_connected(_on_pause_pressed):
+		_pause_button.pressed.connect(_on_pause_pressed)
+	if not _speed_select.item_selected.is_connected(_on_speed_selected):
+		_speed_select.item_selected.connect(_on_speed_selected)
+
+
+func _refresh_playback_controls() -> void:
+	if _is_playing:
+		_pause_button.text = "继续" if _is_paused else "暂停"
+		_pause_button.disabled = false
+		return
+	_pause_button.text = "已结束"
+	_pause_button.disabled = true
+
+
+func _on_pause_pressed() -> void:
+	if not _is_playing:
+		return
+	_is_paused = not _is_paused
+	_refresh_playback_controls()
+
+
+func _on_speed_selected(index: int) -> void:
+	if index < 0 or index >= _speed_select.item_count:
+		return
+	_playback_speed = float(_speed_select.get_item_metadata(index))
+
+
+func _select_speed_by_value(value: float) -> void:
+	for index in range(_speed_select.item_count):
+		if is_equal_approx(float(_speed_select.get_item_metadata(index)), value):
+			_speed_select.select(index)
+			return
+	if _speed_select.item_count > 0:
+		_speed_select.select(0)
 
 
 func play_battle(setup: Dictionary) -> void:
