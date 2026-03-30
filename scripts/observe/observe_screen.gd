@@ -503,6 +503,7 @@ func _ensure_hud() -> void:
 		return
 	_hud_root = Control.new()
 	_hud_root.name = "HudRoot"
+	_hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_hud_root)
 
@@ -516,6 +517,7 @@ func _ensure_hud() -> void:
 
 	_tick_label = Label.new()
 	_tick_label.name = "TickLabel"
+	_tick_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tick_label.position = Vector2(20, 20)
 	_tick_label.text = "第0帧"
 	_tick_label.add_theme_font_size_override("font_size", 42)
@@ -523,6 +525,7 @@ func _ensure_hud() -> void:
 
 	_event_label = Label.new()
 	_event_label.name = "EventLabel"
+	_event_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_event_label.position = Vector2(24, 72)
 	_event_label.custom_minimum_size = Vector2(1360, 42)
 	_event_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -532,6 +535,7 @@ func _ensure_hud() -> void:
 
 	_strategy_cast_label = Label.new()
 	_strategy_cast_label.name = "StrategyCastLabel"
+	_strategy_cast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_strategy_cast_label.position = Vector2(24, 114)
 	_strategy_cast_label.custom_minimum_size = Vector2(1360, 42)
 	_strategy_cast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

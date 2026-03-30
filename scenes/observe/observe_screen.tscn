@@ -116,6 +116,24 @@ autowrap_mode = 2
 text = "本帧动态："
 theme_override_font_sizes/font_size = 24
 
+[node name="DetailSectionTitleBar" type="ColorRect" parent="EventPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+mouse_filter = 2
+color = Color(0.176471, 0.247059, 0.160784, 0.96)
+
+[node name="DetailSectionTitleLabel" type="Label" parent="EventPanel/DetailSectionTitleBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "战术明细区（最近12条）"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 23
+
 [node name="DetailToggleButton" type="Button" parent="EventPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 58)
@@ -127,6 +145,24 @@ visible = false
 layout_mode = 2
 custom_minimum_size = Vector2(0, 180)
 theme_override_font_sizes/font_size = 22
+
+[node name="TimelineSectionTitleBar" type="ColorRect" parent="EventPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+mouse_filter = 2
+color = Color(0.196078, 0.176471, 0.113725, 0.96)
+
+[node name="TimelineSectionTitleLabel" type="Label" parent="EventPanel/TimelineSectionTitleBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "事件标记区（可点击跳帧）"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 23
 
 [node name="EventTimelineLabel" type="Label" parent="EventPanel"]
 layout_mode = 2
