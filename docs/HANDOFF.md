@@ -505,6 +505,33 @@
 - 全量测试：`tests/*.gd` 共 67 项，`67/67` 通过
 - 当前工作区状态：Phase14 Task5 收口完成，可进入下一阶段规划
 
+## 本次改动（2026-03-31，Phase14 Task5 代码质量收口补丁，当前工作区）
+
+针对 Task5 代码质量审查提出的 fallback host 粘连风险，补充了最小修复与回归断言：
+
+- `observe_screen.gd`：
+  - `_ensure_token_host` / `_ensure_hud` / `_ensure_map` 改为每次重新解析 battlefield host
+  - 若节点已存在且 parent 不匹配，自动 `reparent` 到 `BattlefieldPanel`
+  - 恢复后统一重置 `Control.PRESET_FULL_RECT`，避免坐标系/锚点残留
+  - `BattleMap` 恢复后继续保持在底层渲染顺序（`move_child(..., 0)`）
+- `observe_layer_hud_test.gd`：
+  - 新增“先 fallback 到 root，再恢复到 BattlefieldPanel”的两阶段回归
+  - 新增迁移后 full-rect 锚点与 offset 断言
+  - 新增恢复后 `BattleMap < TokenHost < HudRoot` 层级顺序断言
+
+对应提交：
+
+- `25d5ebf`（fix: reconcile observe battlefield host fallback attachments）
+
+验证结果（当前工作区）：
+
+- 指定回归：
+  - `tests/observe_ui_interaction_accessibility_test.gd` 通过
+  - `tests/observe_map_view_smoke_test.gd` 通过
+  - `tests/observe_layer_hud_test.gd` 通过
+- Observe 回归：`tests/observe_*.gd` 共 22 项，`22/22` 通过
+- 全量测试：`tests/*.gd` 共 67 项，`67/67` 通过
+
 ## 当前唯一依据
 
 继续工作时，优先以这些文件为准：
