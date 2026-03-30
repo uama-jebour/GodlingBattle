@@ -1,0 +1,31 @@
+extends SceneTree
+
+const OBSERVE_SCENE := preload("res://scenes/observe/observe_screen.tscn")
+
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var session_state := root.get_node_or_null("SessionState")
+	assert(session_state != null)
+	session_state.battle_setup = {
+		"hero_id": "hero_angel",
+		"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+		"strategy_ids": ["strat_void_echo"],
+		"battle_id": "battle_void_gate_alpha",
+		"seed": 1
+	}
+	session_state.last_timeline = [{"tick": 0, "entities": []}]
+	session_state.last_battle_result = {"log_entries": []}
+
+	var screen: Control = OBSERVE_SCENE.instantiate()
+	root.add_child(screen)
+	await process_frame
+
+	assert(screen.get_node_or_null("BattleMap") != null)
+
+	screen.queue_free()
+	await process_frame
+	quit(0)
