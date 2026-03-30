@@ -10,3 +10,44 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = 40.0
+offset_right = -48.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="HeadlineLabel" type="Label" parent="Layout"]
+layout_mode = 2
+text = "结果"
+
+[node name="SurvivorLabel" type="Label" parent="Layout"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+
+[node name="CasualtyLabel" type="Label" parent="Layout"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+
+[node name="EventLabel" type="Label" parent="Layout"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+
+[node name="StrategyLabel" type="Label" parent="Layout"]
+layout_mode = 2
+text = ""
+autowrap_mode = 2
+
+[node name="ReturnButton" type="Button" parent="Layout"]
+layout_mode = 2
+text = "返回出战前准备"
