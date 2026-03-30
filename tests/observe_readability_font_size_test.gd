@@ -31,6 +31,7 @@ func _run() -> void:
 	await process_frame
 
 	var targets := {
+		"LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldTitle": 15,
 		"LayoutRoot/LeftColumn/StrategyPanel/StrategyTitle": 15,
 		"LayoutRoot/RightColumn/AliveRosterPanel/RosterTitle": 15,
 		"LayoutRoot/RightColumn/BattleLogPanel/BattleLogTitle": 15
