@@ -3,6 +3,7 @@ extends Control
 const RUNNER := preload("res://scripts/battle_runtime/battle_runner.gd")
 const TOKEN_VIEW_SCENE := preload("res://scenes/observe/token_view.tscn")
 const BATTLE_MAP_SCENE := preload("res://scenes/observe/battle_map_view.tscn")
+const BATTLEFIELD_LAYOUT_SOLVER := preload("res://scripts/observe/battlefield_layout_solver.gd")
 const DISPLAY_NAME_RESOLVER := preload("res://scripts/ui/display_name_resolver.gd")
 const BATTLE_REPORT_FORMATTER := preload("res://scripts/observe/battle_report_formatter.gd")
 const FRAME_STEP_SECONDS := 0.05
@@ -28,6 +29,7 @@ var _token_views: Dictionary = {}
 var _event_rows: Array = []
 var _battle_result: Dictionary = {}
 var _battle_map: Control
+var _battlefield_layout_solver := BATTLEFIELD_LAYOUT_SOLVER.new()
 var _display_name_resolver := DISPLAY_NAME_RESOLVER.new()
 var _battle_report_formatter := BATTLE_REPORT_FORMATTER.new()
 @onready var _pause_button: Button = $PlaybackPanel/PauseButton
@@ -290,12 +292,12 @@ func build_token_snapshot() -> Array:
 	for entity in _current_entities:
 		rows.append({
 			"entity_id": str(entity.get("entity_id", "")),
-			"display_name": str(entity.get("display_name", "")),
+			"display_name": _snapshot_display_name(entity),
 			"side": str(entity.get("side", "")),
 			"hp_ratio": _hp_ratio(entity),
 			"position": _entity_position(entity)
 		})
-	return rows
+	return _battlefield_layout_solver.resolve(rows, _battlefield_bounds())
 
 
 func advance_playback_step() -> bool:
@@ -476,6 +478,46 @@ func _entity_position(entity: Dictionary) -> Vector2:
 	if raw is Vector2:
 		return raw
 	return Vector2.ZERO
+
+
+func _battlefield_bounds() -> Rect2:
+	if _battle_map != null:
+		var battle_map_rect := _battle_map.get_rect()
+		if battle_map_rect.size.x > 0.0 and battle_map_rect.size.y > 0.0:
+			return battle_map_rect
+	var screen_rect := get_rect()
+	if screen_rect.size.x > 0.0 and screen_rect.size.y > 0.0:
+		return screen_rect
+	return Rect2(0, 0, 640, 360)
+
+
+func _snapshot_display_name(entity: Dictionary) -> String:
+	var raw_name := str(entity.get("display_name", ""))
+	var resolved_name := _resolved_entity_display_name(entity)
+	if raw_name.is_empty() or _is_generic_unit_display_name(raw_name) or _looks_like_unit_identifier(raw_name):
+		return resolved_name if not resolved_name.is_empty() else raw_name
+	if _is_unknown_unit_display_name(resolved_name):
+		return raw_name
+	return resolved_name if not resolved_name.is_empty() else raw_name
+
+
+func _resolved_entity_display_name(entity: Dictionary) -> String:
+	var unit_id := str(entity.get("unit_id", ""))
+	if not unit_id.is_empty():
+		return _display_name_resolver.unit_name_from_unit_id(unit_id)
+	return _unit_display_name_from_entity_id(str(entity.get("entity_id", "")))
+
+
+func _is_generic_unit_display_name(name: String) -> bool:
+	return name in ["敌方单位", "友军单位", "英雄单位", "单位"]
+
+
+func _is_unknown_unit_display_name(name: String) -> bool:
+	return name.begins_with("未知")
+
+
+func _looks_like_unit_identifier(name: String) -> bool:
+	return name.contains("_")
 
 
 func _ensure_token_host() -> void:
