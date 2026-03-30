@@ -632,9 +632,12 @@ func _battlefield_bounds() -> Rect2:
 
 
 func _ensure_token_host() -> void:
-	if _token_host != null:
-		return
 	var battlefield_panel := _battlefield_panel_host()
+	if _token_host != null:
+		if _token_host.get_parent() != battlefield_panel:
+			_token_host.reparent(battlefield_panel)
+		_token_host.set_anchors_preset(Control.PRESET_FULL_RECT)
+		return
 	_token_host = Control.new()
 	_token_host.name = "TokenHost"
 	_token_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -655,9 +658,12 @@ func _ensure_token_host() -> void:
 
 
 func _ensure_hud() -> void:
-	if _hud_root != null:
-		return
 	var battlefield_panel := _battlefield_panel_host()
+	if _hud_root != null:
+		if _hud_root.get_parent() != battlefield_panel:
+			_hud_root.reparent(battlefield_panel)
+		_hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+		return
 	_hud_root = Control.new()
 	_hud_root.name = "HudRoot"
 	_hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -702,12 +708,17 @@ func _ensure_hud() -> void:
 
 
 func _ensure_map() -> void:
-	if _battle_map != null:
-		return
 	var battlefield_panel := _battlefield_panel_host()
+	if _battle_map != null:
+		if _battle_map.get_parent() != battlefield_panel:
+			_battle_map.reparent(battlefield_panel)
+		_battle_map.set_anchors_preset(Control.PRESET_FULL_RECT)
+		battlefield_panel.move_child(_battle_map, 0)
+		return
 	_battle_map = BATTLE_MAP_SCENE.instantiate()
 	_battle_map.name = "BattleMap"
 	_battle_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_battle_map.set_anchors_preset(Control.PRESET_FULL_RECT)
 	battlefield_panel.add_child(_battle_map)
 	battlefield_panel.move_child(_battle_map, 0)
 
