@@ -21,6 +21,18 @@ func _run() -> void:
 		_failures.append("missing update_hud_for_tick")
 		_finish(screen)
 		return
+	if not screen.has_method("get_tick_text"):
+		_failures.append("missing get_tick_text")
+		_finish(screen)
+		return
+	if not screen.has_method("get_event_text"):
+		_failures.append("missing get_event_text")
+		_finish(screen)
+		return
+	if not screen.has_method("get_strategy_cast_text"):
+		_failures.append("missing get_strategy_cast_text")
+		_finish(screen)
+		return
 
 	screen.sync_token_views([
 		{"entity_id": "hero_1", "display_name": "英雄", "side": "hero", "hp_ratio": 1.0, "position": Vector2(120, 220)},
@@ -38,6 +50,10 @@ func _run() -> void:
 		"type": "event_warning",
 		"tick": 12,
 		"event_id": "evt_hunter_fiend_arrival"
+	}, {
+		"type": "strategy_cast",
+		"tick": 12,
+		"strategy_id": "strat_chill_wave"
 	}])
 	if str(screen.get_tick_text()) != "第12帧":
 		_failures.append("unexpected tick text")
@@ -45,6 +61,10 @@ func _run() -> void:
 		_failures.append("missing event hint text")
 	if str(screen.get_event_text()).find("event_warning") != -1:
 		_failures.append("event text should not expose english event type")
+	if str(screen.get_strategy_cast_text()).find("寒潮冲击") == -1:
+		_failures.append("missing strategy cast text")
+	if str(screen.get_strategy_cast_text()).find("strat_chill_wave") != -1:
+		_failures.append("strategy text should not expose strategy id")
 
 	_finish(screen)
 

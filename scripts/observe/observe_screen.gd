@@ -44,6 +44,7 @@ var _strategy_card_host: HBoxContainer
 var _strategy_card_views: Dictionary = {}
 var _ally_roster_label: Label
 var _enemy_roster_label: Label
+var _battle_log_scroll: ScrollContainer
 var _battle_log_text_label: RichTextLabel
 var _prev_hp_by_entity: Dictionary = {}
 var _death_marker_until_tick: Dictionary = {}
@@ -633,11 +634,12 @@ func _battlefield_bounds() -> Rect2:
 func _ensure_token_host() -> void:
 	if _token_host != null:
 		return
+	var battlefield_panel := _battlefield_panel_host()
 	_token_host = Control.new()
 	_token_host.name = "TokenHost"
 	_token_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_token_host.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(_token_host)
+	battlefield_panel.add_child(_token_host)
 
 	_ally_layer = Control.new()
 	_ally_layer.name = "AllyLayer"
@@ -655,11 +657,12 @@ func _ensure_token_host() -> void:
 func _ensure_hud() -> void:
 	if _hud_root != null:
 		return
+	var battlefield_panel := _battlefield_panel_host()
 	_hud_root = Control.new()
 	_hud_root.name = "HudRoot"
 	_hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(_hud_root)
+	battlefield_panel.add_child(_hud_root)
 
 	var hud_bg := ColorRect.new()
 	hud_bg.name = "HudBg"
@@ -701,11 +704,12 @@ func _ensure_hud() -> void:
 func _ensure_map() -> void:
 	if _battle_map != null:
 		return
+	var battlefield_panel := _battlefield_panel_host()
 	_battle_map = BATTLE_MAP_SCENE.instantiate()
 	_battle_map.name = "BattleMap"
 	_battle_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_battle_map)
-	move_child(_battle_map, 0)
+	battlefield_panel.add_child(_battle_map)
+	battlefield_panel.move_child(_battle_map, 0)
 
 
 func _layer_for_side(side: String) -> Control:
@@ -729,6 +733,16 @@ func _ensure_strategy_card_host() -> void:
 	_strategy_card_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_strategy_card_host.add_theme_constant_override("separation", 10)
 	strategy_panel.add_child(_strategy_card_host)
+
+
+func _battlefield_panel_host() -> Control:
+	var battlefield_panel := get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel") as Control
+	if battlefield_panel != null:
+		var hint_label := get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldHint") as Label
+		if hint_label != null:
+			hint_label.visible = false
+		return battlefield_panel
+	return self
 
 
 func _ensure_alive_roster_panel() -> void:
@@ -785,6 +799,12 @@ func _ensure_battle_log_panel() -> void:
 	var hint_label := get_node_or_null("LayoutRoot/RightColumn/BattleLogPanel/BattleLogHint") as Label
 	if hint_label != null:
 		hint_label.visible = false
+	_battle_log_scroll = ScrollContainer.new()
+	_battle_log_scroll.name = "BattleLogScroll"
+	_battle_log_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_battle_log_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_battle_log_scroll.custom_minimum_size = Vector2(0, 180)
+	panel.add_child(_battle_log_scroll)
 	_battle_log_text_label = RichTextLabel.new()
 	_battle_log_text_label.name = "BattleLogRichText"
 	_battle_log_text_label.bbcode_enabled = false
@@ -792,9 +812,8 @@ func _ensure_battle_log_panel() -> void:
 	_battle_log_text_label.scroll_active = true
 	_battle_log_text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_battle_log_text_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_battle_log_text_label.custom_minimum_size = Vector2(0, 180)
 	_battle_log_text_label.add_theme_font_size_override("normal_font_size", 18)
-	panel.add_child(_battle_log_text_label)
+	_battle_log_scroll.add_child(_battle_log_text_label)
 
 
 func _refresh_event_timeline() -> void:
