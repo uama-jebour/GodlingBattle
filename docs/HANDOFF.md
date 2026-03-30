@@ -28,7 +28,12 @@
 - app flow smoke 扩展到 replay 分支
 - Phase5 计划文档与交接文档同步更新
 
-对应提交：`a8d75ae`（已 push 到 `origin/main`）
+对应提交：
+
+- 功能基线：`a8d75ae`（Phase5 功能完成）
+- 文档治理基线：`73b11b0`（文档唯一性与职责收敛）
+
+当前建议以 `73b11b0` 作为接力起点（`main` 最新）。
 
 ## 验证结果（本次）
 
@@ -55,6 +60,22 @@
 1. 准备页从“单战技开关”升级为可扩展多战技选择组件
 2. 观战增加进度条/跳帧能力，形成完整 replay 操作闭环
 3. 增加长时间线与复杂事件组合下的稳定性回归测试
+
+## 接手操作清单（10 分钟版）
+
+1. `git checkout main && git pull`
+2. 先读 [文档唯一性约定.md](./文档唯一性约定.md)（明确哪些文档可以更新状态）
+3. 再读 [项目概览.md](./项目概览.md) 与 [实施计划导读.md](./实施计划导读.md)
+4. 基于 [2026-03-30-godlingbattle.md](./superpowers/plans/2026-03-30-godlingbattle.md) 产出 phase6 计划
+5. 从 phase6 Task 1 开始执行，并在完成后只更新本文件状态
+
+## 最小验证命令
+
+- 全量回归：
+`for t in $(rg --files tests -g '*.gd' | sort); do /Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script "res://$t" || break; done`
+
+- 关键链路 smoke：
+`/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script res://tests/app_flow_smoke_test.gd`
 
 ## 明天接着开工时可直接对 Codex 说的话
 
