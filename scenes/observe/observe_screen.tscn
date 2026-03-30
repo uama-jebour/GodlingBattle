@@ -33,6 +33,100 @@ mouse_filter = 2
 z_index = -1
 color = Color(0.105882, 0.137255, 0.176471, 0.88)
 
+[node name="LayoutRoot" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 124.0
+offset_right = -16.0
+offset_bottom = -16.0
+theme_override_constants/separation = 10
+
+[node name="LeftColumn" type="VBoxContainer" parent="LayoutRoot"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 68.0
+theme_override_constants/separation = 10
+
+[node name="BattlefieldPanel" type="VBoxContainer" parent="LayoutRoot/LeftColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+theme_override_constants/separation = 8
+
+[node name="BattlefieldTitle" type="Label" parent="LayoutRoot/LeftColumn/BattlefieldPanel"]
+layout_mode = 2
+text = "战场视图"
+theme_override_font_sizes/font_size = 20
+
+[node name="BattlefieldHint" type="Label" parent="LayoutRoot/LeftColumn/BattlefieldPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 2
+text = "战场与单位层保留现有运行时节点，后续任务将在此区域继续扩展。"
+theme_override_font_sizes/font_size = 16
+
+[node name="StrategyPanel" type="VBoxContainer" parent="LayoutRoot/LeftColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+theme_override_constants/separation = 8
+
+[node name="StrategyTitle" type="Label" parent="LayoutRoot/LeftColumn/StrategyPanel"]
+layout_mode = 2
+text = "战术策略"
+theme_override_font_sizes/font_size = 20
+
+[node name="StrategyHint" type="Label" parent="LayoutRoot/LeftColumn/StrategyPanel"]
+layout_mode = 2
+autowrap_mode = 2
+text = "策略卡片区已预留，现阶段继续兼容现有观察回放逻辑。"
+theme_override_font_sizes/font_size = 16
+
+[node name="RightColumn" type="VBoxContainer" parent="LayoutRoot"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 32.0
+theme_override_constants/separation = 10
+
+[node name="AliveRosterPanel" type="VBoxContainer" parent="LayoutRoot/RightColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+theme_override_constants/separation = 8
+
+[node name="RosterTitle" type="Label" parent="LayoutRoot/RightColumn/AliveRosterPanel"]
+layout_mode = 2
+text = "存活名册"
+theme_override_font_sizes/font_size = 20
+
+[node name="RosterHint" type="Label" parent="LayoutRoot/RightColumn/AliveRosterPanel"]
+layout_mode = 2
+autowrap_mode = 2
+text = "右上区域已预留给存活名册，后续任务会填充实时名单。"
+theme_override_font_sizes/font_size = 16
+
+[node name="BattleLogPanel" type="VBoxContainer" parent="LayoutRoot/RightColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+theme_override_constants/separation = 8
+
+[node name="BattleLogTitle" type="Label" parent="LayoutRoot/RightColumn/BattleLogPanel"]
+layout_mode = 2
+text = "战斗日志"
+theme_override_font_sizes/font_size = 20
+
+[node name="BattleLogHint" type="Label" parent="LayoutRoot/RightColumn/BattleLogPanel"]
+layout_mode = 2
+autowrap_mode = 2
+text = "战报中心继续沿用现有 EventPanel 节点，后续任务会将日志内容正式接入这里。"
+theme_override_font_sizes/font_size = 16
+
 [node name="PauseButton" type="Button" parent="PlaybackPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 72)

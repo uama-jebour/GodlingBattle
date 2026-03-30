@@ -30,6 +30,13 @@ var _battle_result: Dictionary = {}
 var _battle_map: Control
 var _display_name_resolver := DISPLAY_NAME_RESOLVER.new()
 var _battle_report_formatter := BATTLE_REPORT_FORMATTER.new()
+@onready var _layout_root: Control = $LayoutRoot
+@onready var _left_column: Control = $LayoutRoot/LeftColumn
+@onready var _right_column: Control = $LayoutRoot/RightColumn
+@onready var _battlefield_panel: Control = $LayoutRoot/LeftColumn/BattlefieldPanel
+@onready var _strategy_panel: Control = $LayoutRoot/LeftColumn/StrategyPanel
+@onready var _alive_roster_panel: Control = $LayoutRoot/RightColumn/AliveRosterPanel
+@onready var _battle_log_panel: Control = $LayoutRoot/RightColumn/BattleLogPanel
 @onready var _pause_button: Button = $PlaybackPanel/PauseButton
 @onready var _step_back_button: Button = $PlaybackPanel/StepBackButton
 @onready var _progress_slider: HSlider = $PlaybackPanel/ProgressSlider
@@ -50,6 +57,15 @@ var _event_timeline_zoom_step := 1
 var _event_timeline_density_limit := 64
 var _event_marker_ticks: Array[int] = []
 var _detail_log_expanded := false
+
+
+func get_layout_ratio_snapshot() -> Dictionary:
+	var left_ratio := _ratio_from_horizontal_layout()
+	var right_top_ratio := _ratio_from_vertical_layout()
+	return {
+		"left": left_ratio,
+		"right_top": right_top_ratio
+	}
 
 
 func _ready() -> void:
@@ -795,6 +811,32 @@ func _session_state() -> Node:
 
 func _app_router() -> Node:
 	return get_node_or_null("/root/AppRouter")
+
+
+func _ratio_from_horizontal_layout() -> float:
+	if _layout_root != null and _layout_root.size.x > 0.0 and _left_column != null and _left_column.size.x > 0.0:
+		return _left_column.size.x / _layout_root.size.x
+	if _left_column == null or _right_column == null:
+		return 0.0
+	var left_stretch := maxf(_left_column.size_flags_stretch_ratio, 0.0)
+	var right_stretch := maxf(_right_column.size_flags_stretch_ratio, 0.0)
+	var total_stretch := left_stretch + right_stretch
+	if total_stretch <= 0.0:
+		return 0.0
+	return left_stretch / total_stretch
+
+
+func _ratio_from_vertical_layout() -> float:
+	if _right_column != null and _right_column.size.y > 0.0 and _alive_roster_panel != null and _alive_roster_panel.size.y > 0.0:
+		return _alive_roster_panel.size.y / _right_column.size.y
+	if _alive_roster_panel == null or _battle_log_panel == null:
+		return 0.0
+	var top_stretch := maxf(_alive_roster_panel.size_flags_stretch_ratio, 0.0)
+	var bottom_stretch := maxf(_battle_log_panel.size_flags_stretch_ratio, 0.0)
+	var total_stretch := top_stretch + bottom_stretch
+	if total_stretch <= 0.0:
+		return 0.0
+	return top_stretch / total_stretch
 
 
 func _event_type_display_name(event_type: String) -> String:
