@@ -44,14 +44,26 @@ func _run() -> void:
 		return
 
 	var text := String(snapshot_label.text)
-	if text.find("hero_angel") == -1:
-		_failures.append("expected hero_id in setup snapshot")
-	if text.find("ally_hound_remnant") == -1:
-		_failures.append("expected ally_ids in setup snapshot")
-	if text.find("strat_nuclear_strike") == -1:
-		_failures.append("expected strategy_ids in setup snapshot")
-	if text.find("battle_void_gate_beta") == -1:
-		_failures.append("expected battle_id in setup snapshot")
+	if text.find("英雄：") == -1:
+		_failures.append("expected chinese hero label in setup snapshot")
+	if text.find("友军：") == -1:
+		_failures.append("expected chinese ally label in setup snapshot")
+	if text.find("战技：") == -1:
+		_failures.append("expected chinese strategy label in setup snapshot")
+	if text.find("关卡：") == -1:
+		_failures.append("expected chinese battle label in setup snapshot")
+	if text.find("英雄：天使") == -1:
+		_failures.append("expected localized hero name in setup snapshot")
+	if text.find("野犬残形") == -1:
+		_failures.append("expected localized ally name in setup snapshot")
+	if text.find("核击协议") == -1:
+		_failures.append("expected localized strategy name in setup snapshot")
+	if text.find("虚无裂隙·二层") == -1:
+		_failures.append("expected localized battle name in setup snapshot")
+	if text.find("hero_id") != -1 or text.find("ally_ids") != -1 or text.find("strategy_ids") != -1 or text.find("battle_id") != -1:
+		_failures.append("setup snapshot should not expose english field keys")
+	if text.find("hero_angel") != -1 or text.find("strat_") != -1 or text.find("battle_void_") != -1:
+		_failures.append("setup snapshot should not expose english ids")
 	if text.find("20260330") == -1:
 		_failures.append("expected seed in setup snapshot")
 

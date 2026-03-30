@@ -1,5 +1,7 @@
 extends Control
 
+const DISPLAY_NAME_RESOLVER := preload("res://scripts/ui/display_name_resolver.gd")
+
 @onready var _headline: Label = $Layout/HeadlineLabel
 @onready var _survivor: Label = $Layout/SurvivorLabel
 @onready var _casualty: Label = $Layout/CasualtyLabel
@@ -12,14 +14,15 @@ extends Control
 
 
 func build_summary(result: Dictionary, battle_setup: Dictionary = {}) -> Dictionary:
+	var resolver = DISPLAY_NAME_RESOLVER.new()
 	return {
 		"headline": "胜利" if bool(result.get("victory", false)) else "失败",
-		"survivor_lines": result.get("survivors", []).duplicate(),
-		"casualty_lines": result.get("casualties", []).duplicate(),
-		"event_lines": _map_ids(result.get("triggered_events", []), "event_id"),
-		"strategy_lines": _map_ids(result.get("triggered_strategies", []), "strategy_id"),
-		"strategy_cast_lines": _build_strategy_cast_lines(result.get("log_entries", [])),
-		"setup_snapshot_lines": _build_setup_snapshot_lines(battle_setup)
+		"survivor_lines": _map_unit_names(result.get("survivors", []), resolver),
+		"casualty_lines": _map_unit_names(result.get("casualties", []), resolver),
+		"event_lines": _map_event_names(result.get("triggered_events", []), resolver),
+		"strategy_lines": _map_strategy_names(result.get("triggered_strategies", []), resolver),
+		"strategy_cast_lines": _build_strategy_cast_lines(result.get("log_entries", []), resolver),
+		"setup_snapshot_lines": _build_setup_snapshot_lines(battle_setup, resolver)
 	}
 
 
@@ -64,14 +67,28 @@ func return_to_preparation() -> void:
 		app_router.goto_preparation()
 
 
-func _map_ids(rows: Array, key: String) -> Array:
+func _map_unit_names(rows: Array, resolver: RefCounted) -> Array:
 	var result_rows: Array = []
 	for row in rows:
-		result_rows.append(str(row.get(key, "")))
+		result_rows.append(resolver.unit_name_from_entity_id(str(row)))
 	return result_rows
 
 
-func _build_strategy_cast_lines(log_entries: Array) -> Array:
+func _map_event_names(rows: Array, resolver: RefCounted) -> Array:
+	var result_rows: Array = []
+	for row in rows:
+		result_rows.append(resolver.event_name(str(row.get("event_id", ""))))
+	return result_rows
+
+
+func _map_strategy_names(rows: Array, resolver: RefCounted) -> Array:
+	var result_rows: Array = []
+	for row in rows:
+		result_rows.append(resolver.strategy_name(str(row.get("strategy_id", ""))))
+	return result_rows
+
+
+func _build_strategy_cast_lines(log_entries: Array, resolver: RefCounted) -> Array:
 	var cast_counts: Dictionary = {}
 	var cast_order: Array[String] = []
 	for row in log_entries:
@@ -86,33 +103,44 @@ func _build_strategy_cast_lines(log_entries: Array) -> Array:
 		cast_counts[strategy_id] = int(cast_counts[strategy_id]) + 1
 	var lines: Array = []
 	for strategy_id in cast_order:
-		lines.append("%s x%d" % [strategy_id, int(cast_counts[strategy_id])])
+		lines.append("%s x%d" % [resolver.strategy_name(strategy_id), int(cast_counts[strategy_id])])
 	return lines
 
 
-func _build_setup_snapshot_lines(battle_setup: Dictionary) -> Array:
+func _build_setup_snapshot_lines(battle_setup: Dictionary, resolver: RefCounted) -> Array:
 	if battle_setup.is_empty():
-		return ["hero_id=", "ally_ids=", "strategy_ids=", "battle_id=", "seed="]
+		return ["英雄：", "友军：", "战技：", "关卡：", "种子："]
 	var hero_id := str(battle_setup.get("hero_id", ""))
-	var ally_ids := _to_string_array(battle_setup.get("ally_ids", []))
-	var strategy_ids := _to_string_array(battle_setup.get("strategy_ids", []))
+	var hero_name: String = resolver.unit_name_from_unit_id(hero_id)
+	var ally_ids := _to_display_unit_names(resolver, battle_setup.get("ally_ids", []))
+	var strategy_ids := _to_display_strategy_names(resolver, battle_setup.get("strategy_ids", []))
 	var battle_id := str(battle_setup.get("battle_id", ""))
+	var battle_name: String = resolver.battle_name(battle_id)
 	var seed := str(battle_setup.get("seed", ""))
 	return [
-		"hero_id=%s" % hero_id,
-		"ally_ids=%s" % ", ".join(ally_ids),
-		"strategy_ids=%s" % ", ".join(strategy_ids),
-		"battle_id=%s" % battle_id,
-		"seed=%s" % seed
+		"英雄：%s" % hero_name,
+		"友军：%s" % ", ".join(ally_ids),
+		"战技：%s" % ", ".join(strategy_ids),
+		"关卡：%s" % battle_name,
+		"种子：%s" % seed
 	]
 
 
-func _to_string_array(raw_value: Variant) -> Array:
+func _to_display_unit_names(resolver: RefCounted, raw_value: Variant) -> Array:
 	var values: Array = []
 	if not (raw_value is Array):
 		return values
 	for item in raw_value:
-		values.append(str(item))
+		values.append(resolver.unit_name_from_unit_id(str(item)))
+	return values
+
+
+func _to_display_strategy_names(resolver: RefCounted, raw_value: Variant) -> Array:
+	var values: Array = []
+	if not (raw_value is Array):
+		return values
+	for item in raw_value:
+		values.append(resolver.strategy_name(str(item)))
 	return values
 
 
