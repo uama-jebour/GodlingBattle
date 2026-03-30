@@ -41,10 +41,12 @@ func _run() -> void:
 		return
 
 	var text := String(cast_label.text)
-	if text.find("strat_chill_wave x2") == -1:
+	if text.find("寒潮冲击 x2") == -1:
 		_failures.append("expected chill wave summary count")
-	if text.find("strat_nuclear_strike x1") == -1:
+	if text.find("核击协议 x1") == -1:
 		_failures.append("expected nuclear strike summary count")
+	if text.find("strat_") != -1:
+		_failures.append("cast summary should not expose strategy ids")
 
 	screen.queue_free()
 	await process_frame
