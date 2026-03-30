@@ -24,7 +24,14 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 
-	assert(screen.get_node_or_null("BattleMap") != null)
+	var battle_map := screen.get_node_or_null("BattleMap")
+	assert(battle_map != null)
+	var token_host := screen.get_node_or_null("TokenHost")
+	var hud_root := screen.get_node_or_null("HudRoot")
+	assert(token_host != null)
+	assert(hud_root != null)
+	assert(battle_map.get_index() < token_host.get_index())
+	assert(battle_map.get_index() < hud_root.get_index())
 
 	screen.queue_free()
 	await process_frame

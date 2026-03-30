@@ -59,6 +59,8 @@ func _run() -> void:
 	assert(prep_again != null)
 	assert(prep_again.name == "PreparationScreen")
 	assert(prep_again.get_node_or_null("Layout/StartBattleButton") != null)
+	assert(session_state.last_timeline.is_empty())
+	assert(session_state.last_battle_result.is_empty())
 
 	app_root.queue_free()
 	await process_frame

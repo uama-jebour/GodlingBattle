@@ -1,5 +1,6 @@
 extends Control
 
+const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 const DEFAULT_STRATEGY_BUDGET := 16
 
 var _current_selection: Dictionary = {
@@ -32,26 +33,35 @@ func set_selection(selection: Dictionary) -> void:
 
 
 func build_battle_setup(selection: Dictionary) -> Dictionary:
+	var content: Node = BATTLE_CONTENT.new()
 	var hero_id := String(selection.get("hero_id", ""))
 	var ally_ids: Array = selection.get("ally_ids", [])
 	var strategy_ids: Array = selection.get("strategy_ids", [])
 	var battle_id := String(selection.get("battle_id", ""))
-	var battle_content := _battle_content()
-	if hero_id.is_empty():
+	if hero_id.is_empty() or content.get_unit(hero_id).is_empty():
+		content.free()
 		return {"invalid_reason": "missing_hero"}
 	if ally_ids.size() != 3:
+		content.free()
 		return {"invalid_reason": "invalid_ally_count"}
-	if battle_id.is_empty():
-		return {"invalid_reason": "missing_battle"}
-	if battle_content != null and battle_content.get_battle(battle_id).is_empty():
+	for ally_id in ally_ids:
+		if content.get_unit(String(ally_id)).is_empty():
+			content.free()
+			return {"invalid_reason": "missing_ally"}
+	for strategy_id in strategy_ids:
+		if content.get_strategy(String(strategy_id)).is_empty():
+			content.free()
+			return {"invalid_reason": "missing_strategy"}
+	if battle_id.is_empty() or content.get_battle(battle_id).is_empty():
+		content.free()
 		return {"invalid_reason": "missing_battle"}
 	var total_cost := 0
 	for strategy_id in strategy_ids:
-		if battle_content == null:
-			continue
-		total_cost += int(battle_content.get_strategy(String(strategy_id)).get("cost", 0))
+		total_cost += int(content.get_strategy(String(strategy_id)).get("cost", 0))
 	if total_cost > DEFAULT_STRATEGY_BUDGET:
+		content.free()
 		return {"invalid_reason": "strategy_budget_exceeded"}
+	content.free()
 	return {
 		"hero_id": hero_id,
 		"ally_ids": ally_ids.duplicate(),
@@ -150,13 +160,6 @@ func _app_router() -> Node:
 	if root == null:
 		return null
 	return root.get_node_or_null("AppRouter")
-
-
-func _battle_content() -> Node:
-	var root := _root_node()
-	if root == null:
-		return null
-	return root.get_node_or_null("BattleContent")
 
 
 func _root_node() -> Node:
