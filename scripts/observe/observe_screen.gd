@@ -11,7 +11,13 @@ var _current_entities: Array = []
 var _playback_accumulator := 0.0
 var _is_playing := false
 var _token_host: Control
+var _ally_layer: Control
+var _enemy_layer: Control
+var _hud_root: Control
+var _tick_label: Label
+var _event_label: Label
 var _token_views: Dictionary = {}
+var _event_rows: Array = []
 
 
 func _ready() -> void:
@@ -19,7 +25,9 @@ func _ready() -> void:
 		return
 	if SessionState.last_timeline.is_empty():
 		play_battle(SessionState.battle_setup)
+	_event_rows = SessionState.last_battle_result.get("log_entries", []).duplicate(true)
 	_ensure_token_host()
+	_ensure_hud()
 	_timeline = SessionState.last_timeline.duplicate(true)
 	_frame_index = 0
 	_playback_accumulator = 0.0
@@ -54,6 +62,7 @@ func apply_timeline_frame(frame: Dictionary) -> void:
 	_current_tick = int(frame.get("tick", 0))
 	_current_entities = frame.get("entities", []).duplicate(true)
 	sync_token_views(build_token_snapshot())
+	update_hud_for_tick(_current_tick, _event_rows)
 
 
 func build_token_snapshot() -> Array:
@@ -86,11 +95,14 @@ func sync_token_views(snapshot: Array) -> void:
 		if entity_id.is_empty():
 			continue
 		var token = _token_views.get(entity_id, null)
+		var target_layer := _layer_for_side(str(row.get("side", "")))
 		if token == null:
 			token = TOKEN_VIEW_SCENE.instantiate()
 			token.size = token.custom_minimum_size
-			_token_host.add_child(token)
+			target_layer.add_child(token)
 			_token_views[entity_id] = token
+		elif token.get_parent() != target_layer:
+			token.reparent(target_layer)
 		token.apply_snapshot(row)
 		alive_ids[entity_id] = true
 	for entity_id in _token_views.keys():
@@ -107,6 +119,49 @@ func get_token_view_count() -> int:
 
 func get_token_view(entity_id: String) -> Node:
 	return _token_views.get(entity_id, null)
+
+
+func get_layer_child_count(side: String) -> int:
+	_ensure_token_host()
+	var layer := _layer_for_side(side)
+	return layer.get_child_count()
+
+
+func get_token_parent_name(entity_id: String) -> String:
+	var token: Node = _token_views.get(entity_id, null)
+	if token == null:
+		return ""
+	var parent := token.get_parent()
+	if parent == null:
+		return ""
+	return parent.name
+
+
+func update_hud_for_tick(tick: int, event_rows: Array) -> void:
+	_ensure_hud()
+	_tick_label.text = "Tick %d" % tick
+	var messages: Array[String] = []
+	for row in event_rows:
+		if int(row.get("tick", -1)) != tick:
+			continue
+		messages.append("%s:%s" % [
+			str(row.get("type", "")),
+			str(row.get("event_id", row.get("entity_id", "")))
+		])
+	if messages.is_empty():
+		_event_label.text = ""
+		return
+	_event_label.text = " | ".join(messages)
+
+
+func get_tick_text() -> String:
+	_ensure_hud()
+	return _tick_label.text
+
+
+func get_event_text() -> String:
+	_ensure_hud()
+	return _event_label.text
 
 
 func _hp_ratio(entity: Dictionary) -> float:
@@ -129,3 +184,40 @@ func _ensure_token_host() -> void:
 	_token_host.name = "TokenHost"
 	_token_host.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_token_host)
+
+	_ally_layer = Control.new()
+	_ally_layer.name = "AllyLayer"
+	_ally_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_token_host.add_child(_ally_layer)
+
+	_enemy_layer = Control.new()
+	_enemy_layer.name = "EnemyLayer"
+	_enemy_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_token_host.add_child(_enemy_layer)
+
+
+func _ensure_hud() -> void:
+	if _hud_root != null:
+		return
+	_hud_root = Control.new()
+	_hud_root.name = "HudRoot"
+	_hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_hud_root)
+
+	_tick_label = Label.new()
+	_tick_label.name = "TickLabel"
+	_tick_label.position = Vector2(20, 20)
+	_tick_label.text = "Tick 0"
+	_hud_root.add_child(_tick_label)
+
+	_event_label = Label.new()
+	_event_label.name = "EventLabel"
+	_event_label.position = Vector2(20, 48)
+	_event_label.text = ""
+	_hud_root.add_child(_event_label)
+
+
+func _layer_for_side(side: String) -> Control:
+	if side == "enemy":
+		return _enemy_layer
+	return _ally_layer
