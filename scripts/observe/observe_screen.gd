@@ -733,7 +733,12 @@ func _refresh_detail_log(tick: int, rows: Array) -> void:
 	if _detail_log_list == null:
 		return
 	_detail_log_list.clear()
-	for line in _battle_report_formatter.build_tick_detail(rows, tick, _event_filter_type):
+	var detail_lines := (
+		_battle_report_formatter.build_recent_detail(rows, tick, _event_filter_type, 12)
+		if _detail_log_expanded
+		else _battle_report_formatter.build_tick_detail(rows, tick, _event_filter_type)
+	)
+	for line in detail_lines:
 		_detail_log_list.add_item(String(line))
 	_refresh_detail_log_visibility()
 
@@ -741,7 +746,7 @@ func _refresh_detail_log(tick: int, rows: Array) -> void:
 func _refresh_detail_log_visibility() -> void:
 	if _detail_toggle_button == null or _detail_log_list == null:
 		return
-	_detail_toggle_button.text = "收起战术明细" if _detail_log_expanded else "展开战术明细"
+	_detail_toggle_button.text = "收起战术明细（最近12条）" if _detail_log_expanded else "展开战术明细（最近12条）"
 	_detail_log_list.visible = _detail_log_expanded
 
 

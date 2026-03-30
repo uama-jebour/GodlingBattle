@@ -75,6 +75,21 @@ func _verify_formatter_output() -> void:
 	if empty_detail.size() != 1 or String(empty_detail[0]) != "暂无战术明细":
 		_failures.append("detail lines should use chinese fallback when empty")
 
+	var rolling_rows := [
+		{"tick": 4, "type": "event_warning", "event_id": "evt_hunter_fiend_arrival"},
+		{"tick": 6, "type": "event_resolve", "event_id": "evt_hunter_fiend_arrival", "responded": false},
+		{"tick": 7, "type": "strategy_cast", "strategy_id": "strat_chill_wave"}
+	]
+	var recent_warning_lines: Array = formatter.call("build_recent_detail", rolling_rows, 7, "event_warning", 6)
+	if recent_warning_lines.is_empty():
+		_failures.append("build_recent_detail should include previous matching logs")
+	else:
+		var rolling_text := "\n".join(PackedStringArray(recent_warning_lines))
+		if rolling_text.find("第4帧") == -1 or rolling_text.find("事件预警") == -1:
+			_failures.append("build_recent_detail should keep tick and warning context")
+		if rolling_text.find("evt_") != -1:
+			_failures.append("build_recent_detail should not expose english ids")
+
 
 func _verify_observe_detail_toggle() -> void:
 	var session_state := root.get_node_or_null("SessionState")

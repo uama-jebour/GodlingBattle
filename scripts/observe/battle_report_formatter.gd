@@ -26,6 +26,27 @@ func build_tick_detail(rows: Array, tick: int, filter_type: String = "all") -> A
 	return lines
 
 
+func build_recent_detail(rows: Array, current_tick: int, filter_type: String = "all", limit: int = 12) -> Array[String]:
+	var matched: Array = []
+	for row in rows:
+		var tick := int(row.get("tick", -1))
+		if tick < 0 or tick > current_tick:
+			continue
+		var row_type := str(row.get("type", ""))
+		if filter_type != "all" and row_type != filter_type:
+			continue
+		matched.append(row)
+	if matched.is_empty():
+		return [EMPTY_DETAIL_TEXT]
+	var safe_limit := maxi(1, limit)
+	var start_index := maxi(0, matched.size() - safe_limit)
+	var lines: Array[String] = []
+	for index in range(start_index, matched.size()):
+		var row: Dictionary = matched[index]
+		lines.append(_build_detail_line(row, int(row.get("tick", current_tick))))
+	return lines
+
+
 func _rows_for_tick(rows: Array, tick: int, filter_type: String) -> Array:
 	var filtered: Array = []
 	for row in rows:

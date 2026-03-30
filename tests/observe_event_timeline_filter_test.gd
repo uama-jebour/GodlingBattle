@@ -97,8 +97,15 @@ func _run() -> void:
 		_failures.append("warning filter should empty brief summary when current tick has no warnings")
 	if String(screen.get_event_text()) != "":
 		_failures.append("warning filter should hide tick=1 non-warning events")
-	if detail_list.item_count != 1 or detail_list.get_item_text(0) != "暂无战术明细":
-		_failures.append("warning filter detail should show chinese empty fallback")
+	var warning_detail := ""
+	for index in range(detail_list.item_count):
+		warning_detail += detail_list.get_item_text(index) + "\n"
+	if warning_detail.find("事件预警") == -1:
+		_failures.append("warning filter detail should include recent warning line")
+	if warning_detail.find("结算事件") != -1:
+		_failures.append("warning filter detail should exclude resolve line")
+	if warning_detail.find("释放战技") != -1:
+		_failures.append("warning filter detail should exclude strategy line")
 
 	filter_select.select(3)
 	filter_select.emit_signal("item_selected", 3)
