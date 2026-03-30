@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-`GodlingBattle` 已完成 Phase1-Phase5、Phase6、Phase7、Phase8、Phase9、Phase10、Phase11（Task1-Task2 完成），当前主流程为：
+`GodlingBattle` 已完成 Phase1-Phase5、Phase6、Phase7、Phase8、Phase9、Phase10、Phase11（Task1-Task2 完成）、Phase12（Task1 完成）、Phase13（Task1-Task4 完成），当前主流程为：
 
 `出战前准备（可操作） -> 自动观战（可暂停/倍速） -> 结果结算（可再战/返回）`
 
@@ -19,6 +19,8 @@
 - Phase9（稳定性与基准）：已完成（Task1-Task3）
 - Phase10（观战可读性与基准治理）：已完成（Task1-Task2）
 - Phase11（benchmark 导出与门禁接入）：已完成（Task1-Task2）
+- Phase12（CI benchmark 远端门禁接入）：已完成（Task1）
+- Phase13（结果页中文化兜底 + 观战双层战报中心）：已完成（Task1-Task4）
 
 > 文档唯一性：全局进度只在本文件维护；其他文档仅引用。规则见 [文档唯一性约定.md](./文档唯一性约定.md)。
 
@@ -394,9 +396,71 @@
 
 - 全量测试：`tests/*.gd` 共 49 项，`49/49` 通过
 
+## 本次改动（2026-03-30，Phase12 Task1，当前工作区）
+
+本次完成了 Phase12 Task1（CI benchmark 远端门禁接入）：
+
+- 新增 CI workflow：
+  - `.github/workflows/benchmark-gate.yml`
+  - 在 `pull_request`、`push(main)`、`workflow_dispatch` 触发 benchmark 门禁
+- 工作流接入 Linux 环境 Godot 安装与 `GODOT_BIN` 解析（`godot/godot4` 双通道）
+- 工作流执行 `tools/run_benchmark_gate.sh`，与本地 pre-commit 门禁保持一致策略
+- 新增 workflow 配置回归测试：
+  - `tests/ci_benchmark_gate_workflow_test.gd`
+- 新增 Phase12 计划文档：
+  - `docs/superpowers/plans/2026-03-30-godlingbattle-phase12-ci-benchmark-gate.md`
+
+验证结果（当前工作区）：
+
+- 新增测试：`tests/ci_benchmark_gate_workflow_test.gd` 通过
+- benchmark 相关回归通过：
+  - `tests/runtime_benchmark_stability_test.gd`
+  - `tests/runtime_benchmark_csv_threshold_test.gd`
+  - `tests/runtime_benchmark_cli_export_gate_test.gd`
+  - `tests/runtime_benchmark_baseline_profile_test.gd`
+- 全量测试：`tests/*.gd` 共 50 项，`50/50` 通过
+
+## 本次改动（2026-03-30，Phase13 Task1-Task4，当前工作区）
+
+本次完成了 Phase13（结果页中文化兜底 + 观战战报中心化）：
+
+- Task1（共享显示名解析器）：
+  - 新增 `scripts/ui/display_name_resolver.gd`
+  - 新增 `tests/display_name_resolver_test.gd`
+  - 统一处理 `unit/event/strategy/battle/entity_id` 到中文显示名与中文兜底
+- Task2（结果页去英文 ID）：
+  - `scripts/result/result_screen.gd` 全链路接入 resolver
+  - 结果页存活/阵亡/事件/战技/关键施放/配置快照不再泄露 `hero_/ally_/enemy_/strat_/battle_`
+  - 新增/更新测试：
+    - `tests/result_localization_no_english_ids_test.gd`
+    - `tests/result_setup_snapshot_test.gd`
+    - `tests/result_strategy_cast_summary_test.gd`
+- Task3（观战双层战报中心）：
+  - 新增 `scripts/observe/battle_report_formatter.gd`
+  - `Observe` 右侧新增 `DetailToggleButton + DetailLogList`，默认折叠、可展开战术明细
+  - 简报/明细与 tick 与筛选联动，日志文案中文化并补充“何时释放何技能/何时事件结算”
+  - 新增/更新测试：
+    - `tests/observe_battle_report_brief_detail_test.gd`
+    - `tests/observe_event_timeline_filter_test.gd`
+- Task3 修复收口（代码质量复评问题）：
+  - 修复战况总览进度帧刷新慢一拍
+  - 修复空态文案为 `战况总览：数据准备中`
+  - 新增回归：`tests/observe_battle_overview_state_sync_test.gd`
+- 对应 Phase13 设计与计划文档：
+  - `docs/superpowers/specs/2026-03-30-godlingbattle-battle-report-center-design.md`
+  - `docs/superpowers/plans/2026-03-30-godlingbattle-phase13-battle-report-center.md`
+
+对应提交：
+
+- `442a661`（feat: add shared display name resolver for localized battle logs）
+- `b82fe55`（fix: remove raw english ids from result summary output）
+- `a3f4477`（test: align result cast summary assertions with localized names）
+- `5e2b12a`（feat: add dual-layer observe battle report center）
+- `0342141`（fix: sync observe overview progress and empty-state text）
+
 ## 验证结果（本次）
 
-- 全量测试：`tests/*.gd` 共 49 项，`49/49` 通过
+- 全量测试：`tests/*.gd` 共 56 项，`56/56` 通过
 - 主仓状态：当前工作区为阶段性开发状态（含多项未提交改动）
 
 ## 当前唯一依据
@@ -428,20 +492,23 @@
 23. [2026-03-30-godlingbattle-phase11-benchmark-cli-gate.md](./superpowers/plans/2026-03-30-godlingbattle-phase11-benchmark-cli-gate.md)
 24. [2026-03-30-godlingbattle-phase11-baseline-policy-precommit-gate.md](./superpowers/plans/2026-03-30-godlingbattle-phase11-baseline-policy-precommit-gate.md)
 25. [benchmark-baseline-policy.md](./benchmark-baseline-policy.md)
+26. [2026-03-30-godlingbattle-phase12-ci-benchmark-gate.md](./superpowers/plans/2026-03-30-godlingbattle-phase12-ci-benchmark-gate.md)
+27. [2026-03-30-godlingbattle-battle-report-center-design.md](./superpowers/specs/2026-03-30-godlingbattle-battle-report-center-design.md)
+28. [2026-03-30-godlingbattle-phase13-battle-report-center.md](./superpowers/plans/2026-03-30-godlingbattle-phase13-battle-report-center.md)
 
-## 下一阶段建议（Phase12）
+## 下一阶段建议（Phase14）
 
 建议优先推进一件事：
 
-1. 在 CI（如 GitHub Actions）中接入 `tools/run_benchmark_gate.sh`，实现远端统一门禁
+1. 在 Observe 战报中心增加“关键事件彩色标签 + 阶段汇总卡片”，让用户 3 秒内看清战局转折与胜负原因
 
 ## 接手操作清单（10 分钟版）
 
 1. `git checkout main && git pull`
 2. 先读 [文档唯一性约定.md](./文档唯一性约定.md)（明确哪些文档可以更新状态）
 3. 再读 [项目概览.md](./项目概览.md) 与 [实施计划导读.md](./实施计划导读.md)
-4. 基于 [2026-03-30-godlingbattle.md](./superpowers/plans/2026-03-30-godlingbattle.md) 产出 phase12 计划
-5. 从 CI 远端 benchmark 门禁接入开始执行，并在完成后只更新本文件状态
+4. 基于 [2026-03-30-godlingbattle.md](./superpowers/plans/2026-03-30-godlingbattle.md) 产出 phase14 计划
+5. 先从 Observe 战报中心可视化增强（关键标签 + 阶段汇总）开始执行，并在完成后只更新本文件状态
 
 ## 最小验证命令
 
@@ -453,7 +520,7 @@
 
 ## 明天接着开工时可直接对 Codex 说的话
 
-`请先阅读 docs/HANDOFF.md、docs/项目概览.md、docs/实施计划导读.md，然后基于当前进度继续推进 phase12（CI benchmark 门禁接入）。`
+`请先阅读 docs/HANDOFF.md、docs/项目概览.md、docs/实施计划导读.md，然后基于当前进度继续推进 phase14（Observe 战报中心可视化增强）。`
 
 ## 提醒
 
