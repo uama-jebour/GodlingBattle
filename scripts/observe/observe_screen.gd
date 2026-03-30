@@ -292,7 +292,7 @@ func build_token_snapshot() -> Array:
 	for entity in _current_entities:
 		rows.append({
 			"entity_id": str(entity.get("entity_id", "")),
-			"display_name": _snapshot_display_name(entity),
+			"display_name": str(entity.get("display_name", "")),
 			"side": str(entity.get("side", "")),
 			"hp_ratio": _hp_ratio(entity),
 			"position": _entity_position(entity)
@@ -489,35 +489,6 @@ func _battlefield_bounds() -> Rect2:
 	if screen_rect.size.x > 0.0 and screen_rect.size.y > 0.0:
 		return screen_rect
 	return Rect2(0, 0, 640, 360)
-
-
-func _snapshot_display_name(entity: Dictionary) -> String:
-	var raw_name := str(entity.get("display_name", ""))
-	var resolved_name := _resolved_entity_display_name(entity)
-	if raw_name.is_empty() or _is_generic_unit_display_name(raw_name) or _looks_like_unit_identifier(raw_name):
-		return resolved_name if not resolved_name.is_empty() else raw_name
-	if _is_unknown_unit_display_name(resolved_name):
-		return raw_name
-	return resolved_name if not resolved_name.is_empty() else raw_name
-
-
-func _resolved_entity_display_name(entity: Dictionary) -> String:
-	var unit_id := str(entity.get("unit_id", ""))
-	if not unit_id.is_empty():
-		return _display_name_resolver.unit_name_from_unit_id(unit_id)
-	return _unit_display_name_from_entity_id(str(entity.get("entity_id", "")))
-
-
-func _is_generic_unit_display_name(name: String) -> bool:
-	return name in ["敌方单位", "友军单位", "英雄单位", "单位"]
-
-
-func _is_unknown_unit_display_name(name: String) -> bool:
-	return name.begins_with("未知")
-
-
-func _looks_like_unit_identifier(name: String) -> bool:
-	return name.contains("_")
 
 
 func _ensure_token_host() -> void:

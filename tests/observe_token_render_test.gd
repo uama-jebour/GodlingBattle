@@ -21,9 +21,9 @@ func _run() -> void:
 	screen.apply_timeline_frame({
 		"tick": 0,
 		"entities": [{
-			"entity_id": "hero_1",
-			"display_name": "英雄",
-			"side": "hero",
+			"entity_id": "enemy_missing_1",
+			"display_name": "敌方单位",
+			"side": "enemy",
 			"hp": 80.0,
 			"max_hp": 100.0,
 			"position": Vector2(120, 220)
@@ -35,14 +35,16 @@ func _run() -> void:
 	if int(screen.get_token_view_count()) != 1:
 		_failures.append("expected one token view")
 
-	var token: Node = screen.get_token_view("hero_1")
+	var token: Node = screen.get_token_view("enemy_missing_1")
 	if token == null:
-		_failures.append("expected token for hero_1")
+		_failures.append("expected token for enemy_missing_1")
 	else:
 		if absf(float(token.hp_ratio) - 0.8) > 0.001:
 			_failures.append("expected hp_ratio=0.8")
 		if token.position != Vector2(120, 220):
 			_failures.append("expected token position updated")
+		if str(token.display_name) != "敌方单位":
+			_failures.append("expected token display_name to preserve raw snapshot value")
 
 	_finish(screen)
 
