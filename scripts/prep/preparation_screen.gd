@@ -34,11 +34,11 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 		return {"invalid_reason": "missing_hero"}
 	if ally_ids.size() != 3:
 		return {"invalid_reason": "invalid_ally_count"}
-	if battle_id.is_empty() or BattleContent.get_battle(battle_id).is_empty():
+	if not _is_known_battle(battle_id):
 		return {"invalid_reason": "missing_battle"}
 	var total_cost := 0
 	for strategy_id in strategy_ids:
-		total_cost += int(BattleContent.get_strategy(String(strategy_id)).get("cost", 0))
+		total_cost += _strategy_cost(String(strategy_id))
 	if total_cost > DEFAULT_STRATEGY_BUDGET:
 		return {"invalid_reason": "strategy_budget_exceeded"}
 	return {
@@ -53,9 +53,15 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 func start_battle(selection: Dictionary) -> void:
 	var setup := build_battle_setup(selection)
 	if setup.has("invalid_reason"):
+		error_label.text = "无法开始出战: %s" % String(setup.get("invalid_reason", "unknown"))
 		return
-	SessionState.battle_setup = setup
-	AppRouter.goto_observe()
+	error_label.text = ""
+	var session_state := _session_state()
+	if session_state != null:
+		session_state.battle_setup = setup
+	var app_router := _app_router()
+	if app_router != null:
+		app_router.goto_observe()
 
 
 func _render_shell() -> void:
@@ -118,8 +124,30 @@ func _describe_invalid_reason(invalid_reason: String) -> String:
 
 
 func _on_start_pressed() -> void:
-	var setup := build_battle_setup(selection)
-	if setup.has("invalid_reason"):
-		error_label.text = _describe_invalid_reason(String(setup.get("invalid_reason", "")))
-		return
 	start_battle(selection)
+
+
+func _session_state() -> Node:
+	return get_node_or_null("/root/SessionState")
+
+
+func _app_router() -> Node:
+	return get_node_or_null("/root/AppRouter")
+
+
+func _is_known_battle(battle_id: String) -> bool:
+	return battle_id == "battle_void_gate_alpha"
+
+
+func _strategy_cost(strategy_id: String) -> int:
+	match strategy_id:
+		"strat_void_echo":
+			return 1
+		"strat_chill_wave":
+			return 3
+		"strat_counter_demon_summon":
+			return 2
+		"strat_nuclear_strike":
+			return 6
+		_:
+			return 0
