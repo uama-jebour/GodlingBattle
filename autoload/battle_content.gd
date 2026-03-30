@@ -94,3 +94,50 @@ func get_event(event_id: String) -> Dictionary:
 
 func get_battle(battle_id: String) -> Dictionary:
 	return _battles.get(battle_id, {}).duplicate(true)
+
+
+func get_test_packs() -> Array:
+	return [
+		{
+			"pack_id": "pack_melee_alpha",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": []
+		},
+		{
+			"pack_id": "pack_melee_freeze",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_chill_wave"]
+		},
+		{
+			"pack_id": "pack_void_echo",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_void_echo"]
+		},
+		{
+			"pack_id": "pack_counter_check",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_counter_demon_summon"]
+		},
+		{
+			"pack_id": "pack_nuke_check",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_nuclear_strike"]
+		},
+		{
+			"pack_id": "pack_combo_alpha",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_void_echo", "strat_chill_wave"]
+		}
+	]
