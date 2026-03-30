@@ -18,6 +18,17 @@ func _run() -> void:
 	})
 	if setup.get("invalid_reason", "") != "missing_battle":
 		_failures.append("expected missing_battle")
+
+	var missing_strategy_setup: Dictionary = screen.build_battle_setup({
+		"hero_id": "hero_angel",
+		"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
+		"strategy_ids": ["strat_not_exist"],
+		"battle_id": "battle_void_gate_alpha",
+		"seed": 1001
+	})
+	if missing_strategy_setup.get("invalid_reason", "") != "missing_strategy":
+		_failures.append("expected missing_strategy")
+
 	screen.free()
 	_finish()
 

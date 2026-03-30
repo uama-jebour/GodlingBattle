@@ -2,6 +2,7 @@ extends Control
 
 const RUNNER := preload("res://scripts/battle_runtime/battle_runner.gd")
 const TOKEN_VIEW_SCENE := preload("res://scenes/observe/token_view.tscn")
+const BATTLE_MAP_SCENE := preload("res://scenes/observe/battle_map_view.tscn")
 const FRAME_STEP_SECONDS := 0.05
 
 var _timeline: Array = []
@@ -18,24 +19,29 @@ var _tick_label: Label
 var _event_label: Label
 var _token_views: Dictionary = {}
 var _event_rows: Array = []
+var _battle_map: Control
 
 
 func _ready() -> void:
-	if SessionState.battle_setup.is_empty():
+	var session_state := _session_state()
+	if session_state == null or session_state.battle_setup.is_empty():
 		return
-	if SessionState.last_timeline.is_empty():
-		play_battle(SessionState.battle_setup)
-	_event_rows = SessionState.last_battle_result.get("log_entries", []).duplicate(true)
+	if session_state.last_timeline.is_empty():
+		play_battle(session_state.battle_setup)
+	_event_rows = session_state.last_battle_result.get("log_entries", []).duplicate(true)
 	_ensure_token_host()
 	_ensure_hud()
-	_timeline = SessionState.last_timeline.duplicate(true)
+	_ensure_map()
+	_timeline = session_state.last_timeline.duplicate(true)
 	_frame_index = 0
 	_playback_accumulator = 0.0
 	_is_playing = not _timeline.is_empty()
 	if _is_playing:
 		set_process(true)
 	else:
-		AppRouter.goto_result()
+		var app_router := _app_router()
+		if app_router != null:
+			app_router.goto_result()
 
 
 func _process(delta: float) -> void:
@@ -49,19 +55,27 @@ func _process(delta: float) -> void:
 	if finished:
 		_is_playing = false
 		set_process(false)
-		AppRouter.goto_result()
+		var app_router := _app_router()
+		if app_router != null:
+			app_router.goto_result()
 
 
 func play_battle(setup: Dictionary) -> void:
 	var payload: Dictionary = RUNNER.new().run(setup)
-	SessionState.last_timeline = payload.get("timeline", []).duplicate(true)
-	SessionState.last_battle_result = payload.get("result", {}).duplicate(true)
+	var session_state := _session_state()
+	if session_state == null:
+		return
+	session_state.last_timeline = payload.get("timeline", []).duplicate(true)
+	session_state.last_battle_result = payload.get("result", {}).duplicate(true)
 
 
 func apply_timeline_frame(frame: Dictionary) -> void:
 	_current_tick = int(frame.get("tick", 0))
 	_current_entities = frame.get("entities", []).duplicate(true)
-	sync_token_views(build_token_snapshot())
+	var snapshot := build_token_snapshot()
+	sync_token_views(snapshot)
+	_ensure_map()
+	_battle_map.call("set_snapshot", snapshot)
 	update_hud_for_tick(_current_tick, _event_rows)
 
 
@@ -144,7 +158,7 @@ func update_hud_for_tick(tick: int, event_rows: Array) -> void:
 	for row in event_rows:
 		if int(row.get("tick", -1)) != tick:
 			continue
-		messages.append("%s:%s" % [
+		messages.append("事件 %s:%s" % [
 			str(row.get("type", "")),
 			str(row.get("event_id", row.get("entity_id", "")))
 		])
@@ -217,7 +231,25 @@ func _ensure_hud() -> void:
 	_hud_root.add_child(_event_label)
 
 
+func _ensure_map() -> void:
+	if _battle_map != null:
+		return
+	_battle_map = BATTLE_MAP_SCENE.instantiate()
+	_battle_map.name = "BattleMap"
+	_battle_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_battle_map)
+	move_child(_battle_map, 0)
+
+
 func _layer_for_side(side: String) -> Control:
 	if side == "enemy":
 		return _enemy_layer
 	return _ally_layer
+
+
+func _session_state() -> Node:
+	return get_node_or_null("/root/SessionState")
+
+
+func _app_router() -> Node:
+	return get_node_or_null("/root/AppRouter")
