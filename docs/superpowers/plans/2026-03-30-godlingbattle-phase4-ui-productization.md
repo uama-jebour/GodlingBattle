@@ -1,7 +1,5 @@
 # GodlingBattle Phase 4 UI Productization Implementation Plan
 
-> Status (2026-03-30): completed and merged into `main`.
-
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the current logic-complete loop into a visible and readable product loop where preparation, observe, and result screens all render concrete UI and keep the same deterministic runtime behavior.

@@ -15,6 +15,8 @@
 - Phase5（交互与回放增强）：已完成
 - Phase6（下一阶段）：未开始
 
+> 文档唯一性：全局进度只在本文件维护；其他文档仅引用。规则见 [文档唯一性约定.md](./文档唯一性约定.md)。
+
 ## 本次改动（2026-03-30，已合并到 main）
 
 本次完成了 Phase5 全部任务：
@@ -39,11 +41,12 @@
 
 1. [项目概览.md](./项目概览.md)
 2. [实施计划导读.md](./实施计划导读.md)
-3. [2026-03-30-godlingbattle-design.md](./superpowers/specs/2026-03-30-godlingbattle-design.md)
-4. [2026-03-30-godlingbattle.md](./superpowers/plans/2026-03-30-godlingbattle.md)
-5. [2026-03-30-godlingbattle-phase2-runtime.md](./superpowers/plans/2026-03-30-godlingbattle-phase2-runtime.md)
-6. [2026-03-30-godlingbattle-phase4-ui-productization.md](./superpowers/plans/2026-03-30-godlingbattle-phase4-ui-productization.md)
-7. [2026-03-30-godlingbattle-phase5-interaction-replay.md](./superpowers/plans/2026-03-30-godlingbattle-phase5-interaction-replay.md)
+3. [文档唯一性约定.md](./文档唯一性约定.md)
+4. [2026-03-30-godlingbattle-design.md](./superpowers/specs/2026-03-30-godlingbattle-design.md)
+5. [2026-03-30-godlingbattle.md](./superpowers/plans/2026-03-30-godlingbattle.md)
+6. [2026-03-30-godlingbattle-phase2-runtime.md](./superpowers/plans/2026-03-30-godlingbattle-phase2-runtime.md)
+7. [2026-03-30-godlingbattle-phase4-ui-productization.md](./superpowers/plans/2026-03-30-godlingbattle-phase4-ui-productization.md)
+8. [2026-03-30-godlingbattle-phase5-interaction-replay.md](./superpowers/plans/2026-03-30-godlingbattle-phase5-interaction-replay.md)
 
 ## 下一阶段建议（Phase6）
 

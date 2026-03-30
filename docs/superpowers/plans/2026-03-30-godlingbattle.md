@@ -8,23 +8,7 @@
 
 **Tech Stack:** Godot 4.6, GDScript, headless Godot tests, CSV export, deterministic seed-driven runtime
 
-## Execution Status Update (2026-03-30)
-
-- Phase1（Scaffold + Data + Prep + Runtime + Observe + Result + Tools）：completed
-- Phase2（Runtime hardening）：completed
-- Phase3（Observe readability）：completed
-- Phase4（UI productization）：completed
-- Phase5（Interaction + Replay）：completed
-- Phase6：not started
-
-Latest validated baseline:
-
-- main commit: `a8d75ae`
-- full test suite: `tests/*.gd` => `30/30` pass
-- reference docs:
-  - `docs/superpowers/plans/2026-03-30-godlingbattle-phase2-runtime.md`
-  - `docs/superpowers/plans/2026-03-30-godlingbattle-phase4-ui-productization.md`
-  - `docs/superpowers/plans/2026-03-30-godlingbattle-phase5-interaction-replay.md`
+> Global execution status is maintained only in `docs/HANDOFF.md` to avoid duplicated state updates.
 
 ---
 

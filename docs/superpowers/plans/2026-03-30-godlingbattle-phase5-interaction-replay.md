@@ -1,7 +1,5 @@
 # GodlingBattle Phase 5 Interaction And Replay Implementation Plan
 
-> Status (2026-03-30): completed and merged into `main` (`a8d75ae`).
-
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Upgrade the current visible loop into an actually operable game loop by adding interactive preparation controls, observe playback controls, and result-page replay action while preserving deterministic runtime behavior.
@@ -482,12 +480,6 @@ Expected: PASS
 git -C /Users/zhangwei/Documents/Mycode/GodlingBattle add tests/app_flow_smoke_test.gd docs/HANDOFF.md
 git -C /Users/zhangwei/Documents/Mycode/GodlingBattle commit -m "docs: refresh handoff for phase5 interaction"
 ```
-
-## Execution Result (2026-03-30)
-
-- All tasks in this plan were completed and merged to `main`.
-- Final merge commit: `a8d75ae`.
-- Full regression run: `tests/*.gd` => `30/30` pass.
 
 ## Self-Review
 
