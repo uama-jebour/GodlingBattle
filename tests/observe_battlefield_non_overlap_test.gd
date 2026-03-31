@@ -51,6 +51,21 @@ func _run() -> void:
 	_assert_pair_non_overlap(resolved, ["hero_angel_0", "ally_hound_remnant_1"], "ally pair should not overlap token rectangles")
 	_assert_pair_non_overlap(resolved, ["enemy_wandering_demon_0", "enemy_wandering_demon_1"], "enemy pair should not overlap token rectangles")
 	_assert_rows_within_bounds(resolved, Rect2(0, 0, 640, 360), "resolved tokens should stay within battlefield bounds")
+
+	var dense_rows := [
+		{"entity_id": "ally_0", "side": "ally", "position": Vector2(120, 180)},
+		{"entity_id": "ally_1", "side": "ally", "position": Vector2(124, 182)},
+		{"entity_id": "ally_2", "side": "ally", "position": Vector2(128, 184)},
+		{"entity_id": "ally_3", "side": "ally", "position": Vector2(132, 186)},
+		{"entity_id": "enemy_0", "side": "enemy", "position": Vector2(480, 180)},
+		{"entity_id": "enemy_1", "side": "enemy", "position": Vector2(484, 182)},
+		{"entity_id": "enemy_2", "side": "enemy", "position": Vector2(488, 184)},
+		{"entity_id": "enemy_3", "side": "enemy", "position": Vector2(492, 186)}
+	]
+	var dense_resolved: Array = solver.resolve(dense_rows, Rect2(0, 0, 640, 360))
+	_assert_side_non_overlap(dense_resolved, "ally", "dense ally slots should not overlap")
+	_assert_side_non_overlap(dense_resolved, "enemy", "dense enemy slots should not overlap")
+	_assert_rows_within_bounds(dense_resolved, Rect2(0, 0, 640, 360), "dense rows should stay within battlefield bounds")
 	_finish()
 
 
@@ -78,6 +93,22 @@ func _assert_rows_within_bounds(rows: Array, bounds: Rect2, message: String) -> 
 			return
 		if rect.end.x > bounds.end.x or rect.end.y > bounds.end.y:
 			_failures.append("%s (rect exceeds bounds: %s)" % [message, rect])
+			return
+
+
+func _assert_side_non_overlap(rows: Array, side: String, message: String) -> void:
+	var rects: Array[Rect2] = []
+	for row in rows:
+		var row_side := str(row.get("side", ""))
+		var group_side := "enemy" if row_side == "enemy" else "ally"
+		if group_side != side:
+			continue
+		rects.append(Rect2(row.get("position", Vector2.ZERO), TOKEN_SIZE))
+	for i in range(rects.size()):
+		for j in range(i + 1, rects.size()):
+			if not rects[i].intersects(rects[j]):
+				continue
+			_failures.append("%s (a=%s, b=%s)" % [message, rects[i], rects[j]])
 			return
 
 

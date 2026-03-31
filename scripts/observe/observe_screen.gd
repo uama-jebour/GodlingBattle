@@ -12,6 +12,10 @@ const FRAME_STEP_SECONDS := 0.05
 const JUMP_FRAME_DELTA := 10
 const DEATH_MARKER_LINGER_TICKS := 12
 const DEFAULT_TICK_RATE := 10.0
+const FONT_SIZE_PANEL_TITLE := 24
+const FONT_SIZE_PANEL_BODY := 20
+const FONT_SIZE_HUD_TICK := 44
+const FONT_SIZE_HUD_EVENT := 30
 
 var _timeline: Array = []
 var _frame_index := 0
@@ -330,6 +334,8 @@ func apply_timeline_frame(frame: Dictionary) -> void:
 func build_token_snapshot() -> Array:
 	var rows: Array = []
 	for entity in _current_entities:
+		if not _should_render_entity(entity):
+			continue
 		rows.append({
 			"entity_id": str(entity.get("entity_id", "")),
 			"display_name": str(entity.get("display_name", "")),
@@ -339,6 +345,17 @@ func build_token_snapshot() -> Array:
 			"visual_flags": _build_visual_flags(entity)
 		})
 	return _battlefield_layout_solver.resolve(rows, _battlefield_bounds())
+
+
+func _should_render_entity(entity: Dictionary) -> bool:
+	var entity_id := str(entity.get("entity_id", ""))
+	if entity_id.is_empty():
+		return false
+	if bool(entity.get("alive", false)):
+		_death_marker_until_tick.erase(entity_id)
+		return true
+	var expiry_tick := _death_marker_expiry_tick(entity_id, true)
+	return expiry_tick >= 0 and _current_tick <= expiry_tick
 
 
 func advance_playback_step() -> bool:
@@ -693,7 +710,7 @@ func _ensure_hud() -> void:
 	_tick_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tick_label.position = Vector2(20, 20)
 	_tick_label.text = "第0帧"
-	_tick_label.add_theme_font_size_override("font_size", 42)
+	_tick_label.add_theme_font_size_override("font_size", FONT_SIZE_HUD_TICK)
 	_hud_root.add_child(_tick_label)
 
 	_event_label = Label.new()
@@ -702,7 +719,7 @@ func _ensure_hud() -> void:
 	_event_label.position = Vector2(24, 72)
 	_event_label.custom_minimum_size = Vector2(1360, 42)
 	_event_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_event_label.add_theme_font_size_override("font_size", 28)
+	_event_label.add_theme_font_size_override("font_size", FONT_SIZE_HUD_EVENT)
 	_event_label.text = ""
 	_hud_root.add_child(_event_label)
 
@@ -712,7 +729,7 @@ func _ensure_hud() -> void:
 	_strategy_cast_label.position = Vector2(24, 114)
 	_strategy_cast_label.custom_minimum_size = Vector2(1360, 42)
 	_strategy_cast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_strategy_cast_label.add_theme_font_size_override("font_size", 28)
+	_strategy_cast_label.add_theme_font_size_override("font_size", FONT_SIZE_HUD_EVENT)
 	_strategy_cast_label.text = ""
 	_hud_root.add_child(_strategy_cast_label)
 
@@ -796,13 +813,13 @@ func _build_roster_column(title: String) -> Dictionary:
 	column.add_theme_constant_override("separation", 6)
 	var heading := Label.new()
 	heading.text = title
-	heading.add_theme_font_size_override("font_size", 18)
+	heading.add_theme_font_size_override("font_size", FONT_SIZE_PANEL_TITLE)
 	column.add_child(heading)
 	var body := Label.new()
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_font_size_override("font_size", 16)
+	body.add_theme_font_size_override("font_size", FONT_SIZE_PANEL_BODY)
 	body.text = "暂无"
 	column.add_child(body)
 	return {
@@ -833,7 +850,7 @@ func _ensure_battle_log_panel() -> void:
 	_battle_log_text_label.scroll_active = true
 	_battle_log_text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_battle_log_text_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_battle_log_text_label.add_theme_font_size_override("normal_font_size", 18)
+	_battle_log_text_label.add_theme_font_size_override("normal_font_size", FONT_SIZE_PANEL_BODY)
 	_battle_log_scroll.add_child(_battle_log_text_label)
 
 
@@ -1220,7 +1237,16 @@ func _refresh_battle_log_panel() -> void:
 
 
 func _build_battle_log_lines(limit: int = 18) -> Array[String]:
-	return _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
+	var key_lines := _battle_report_formatter.build_key_event_lines(_event_rows, _display_tick(), 8)
+	var normal_lines := _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
+	var lines: Array[String] = ["关键事件"]
+	for line in key_lines:
+		lines.append("- %s" % String(line))
+	lines.append("")
+	lines.append("普通日志")
+	for line in normal_lines:
+		lines.append("- %s" % String(line))
+	return lines
 
 
 func _display_tick() -> int:
