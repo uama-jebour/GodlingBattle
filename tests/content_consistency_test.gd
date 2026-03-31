@@ -18,7 +18,15 @@ func _run() -> void:
 		for strategy_id in pack.get("strategy_ids", []):
 			if content.get_strategy(str(strategy_id)).is_empty():
 				_failures.append("missing strategy: %s" % strategy_id)
-	var battle_ids := ["battle_void_gate_alpha", "battle_void_gate_beta", "battle_void_gate_test_baseline"]
+	var battle_ids := [
+		"battle_void_gate_alpha",
+		"battle_void_gate_beta",
+		"battle_void_gate_test_baseline",
+		"battle_test_enemy_melee",
+		"battle_test_enemy_ranged",
+		"battle_test_enemy_mixed",
+		"battle_test_enemy_elite"
+	]
 	for battle_id in battle_ids:
 		var battle: Dictionary = content.get_battle(battle_id)
 		if battle.is_empty():

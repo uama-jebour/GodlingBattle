@@ -194,6 +194,38 @@ var _battles := {
 		"enemy_units": ["enemy_wandering_demon", "enemy_animated_machine", "enemy_wandering_demon"],
 		"event_ids": ["evt_hunter_fiend_arrival"],
 		"seed": 26033101
+	}),
+	"battle_test_enemy_melee": TYPES.battle({
+		"battle_id": "battle_test_enemy_melee",
+		"display_name": "测试矩阵·全近战",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_wandering_demon", "enemy_wandering_demon", "enemy_wandering_demon"],
+		"event_ids": [],
+		"seed": 26033111
+	}),
+	"battle_test_enemy_ranged": TYPES.battle({
+		"battle_id": "battle_test_enemy_ranged",
+		"display_name": "测试矩阵·全远程",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_animated_machine", "enemy_animated_machine", "enemy_animated_machine"],
+		"event_ids": [],
+		"seed": 26033112
+	}),
+	"battle_test_enemy_mixed": TYPES.battle({
+		"battle_id": "battle_test_enemy_mixed",
+		"display_name": "测试矩阵·近远混合",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_wandering_demon", "enemy_animated_machine", "enemy_wandering_demon"],
+		"event_ids": [],
+		"seed": 26033113
+	}),
+	"battle_test_enemy_elite": TYPES.battle({
+		"battle_id": "battle_test_enemy_elite",
+		"display_name": "测试矩阵·精英主导",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_hunter_fiend", "enemy_wandering_demon", "enemy_animated_machine"],
+		"event_ids": [],
+		"seed": 26033114
 	})
 }
 
@@ -287,6 +319,34 @@ func get_test_packs() -> Array:
 			"hero_id": "hero_angel",
 			"ally_ids": [],
 			"strategy_ids": ["strat_chill_wave"]
+		},
+		{
+			"pack_id": "pack_a1_enemy_melee",
+			"battle_id": "battle_test_enemy_melee",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": []
+		},
+		{
+			"pack_id": "pack_a1_enemy_ranged",
+			"battle_id": "battle_test_enemy_ranged",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": []
+		},
+		{
+			"pack_id": "pack_a1_enemy_mixed",
+			"battle_id": "battle_test_enemy_mixed",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": []
+		},
+		{
+			"pack_id": "pack_a1_enemy_elite",
+			"battle_id": "battle_test_enemy_elite",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": []
 		},
 		{
 			"pack_id": "pack_multi_event_beta",
