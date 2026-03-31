@@ -532,6 +532,26 @@
 - Observe 回归：`tests/observe_*.gd` 共 22 项，`22/22` 通过
 - 全量测试：`tests/*.gd` 共 67 项，`67/67` 通过
 
+## 本次改动（2026-03-31，Phase14 严格四象限可见模式，当前工作区）
+
+为避免界面继续显示旧右侧 `EventPanel` 导致“看起来无变化”，补充了严格四象限可见模式：
+
+- `observe_screen.gd`：
+  - 在 `_ready()` 中新增 `_hide_legacy_event_panel()`
+  - 运行时强制隐藏 `EventPanel` 与 `EventPanelBg`
+  - 保留其逻辑节点与数据链路，避免破坏既有回归能力
+- `observe_ui_interaction_accessibility_test.gd`：
+  - 新增断言：`EventPanel` / `EventPanelBg` 在严格四象限模式下必须不可见
+
+对应提交：
+
+- `ac45987`（fix: hide legacy observe event panel in strict quadrant mode）
+
+验证结果（当前工作区）：
+
+- `tests/observe_ui_interaction_accessibility_test.gd` 通过
+- `tests/observe_*.gd` 回归通过
+
 ## 当前唯一依据
 
 继续工作时，优先以这些文件为准：
