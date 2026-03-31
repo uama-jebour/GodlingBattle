@@ -35,6 +35,38 @@ var _units := {
 		"move_logic": "chase_nearest",
 		"combat_ai": "melee"
 	}),
+	"ally_arc_shooter": TYPES.unit({
+		"unit_id": "ally_arc_shooter",
+		"display_name": "弧矢射手",
+		"type": "normal",
+		"move_mode": "walking",
+		"attack_mode": "ranged",
+		"move_speed": 11.0,
+		"radius": 2.0,
+		"max_hp": 26.0,
+		"attack_power": 2.2,
+		"attack_speed": 1.35,
+		"attack_range": 4.2,
+		"tags": ["友军", "远程"],
+		"move_logic": "chase_nearest",
+		"combat_ai": "ranged"
+	}),
+	"ally_guardian_sentinel": TYPES.unit({
+		"unit_id": "ally_guardian_sentinel",
+		"display_name": "守护哨兵",
+		"type": "elite",
+		"move_mode": "walking",
+		"attack_mode": "melee",
+		"move_speed": 8.0,
+		"radius": 2.8,
+		"max_hp": 68.0,
+		"attack_power": 3.4,
+		"attack_speed": 1.1,
+		"attack_range": 1.3,
+		"tags": ["友军", "守护"],
+		"move_logic": "chase_nearest",
+		"combat_ai": "melee"
+	}),
 	"enemy_wandering_demon": TYPES.unit({
 		"unit_id": "enemy_wandering_demon",
 		"display_name": "游荡魔",
@@ -346,6 +378,34 @@ func get_test_packs() -> Array:
 			"battle_id": "battle_test_enemy_elite",
 			"hero_id": "hero_angel",
 			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": []
+		},
+		{
+			"pack_id": "pack_a2_quantity_allies",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_entries": [
+				{"unit_id": "ally_hound_remnant", "count": 3}
+			],
+			"strategy_ids": []
+		},
+		{
+			"pack_id": "pack_a2_individual_allies",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_entries": [
+				{"unit_id": "ally_guardian_sentinel", "count": 1}
+			],
+			"strategy_ids": []
+		},
+		{
+			"pack_id": "pack_a2_mixed_allies",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_entries": [
+				{"unit_id": "ally_hound_remnant", "count": 2},
+				{"unit_id": "ally_arc_shooter", "count": 1}
+			],
 			"strategy_ids": []
 		},
 		{

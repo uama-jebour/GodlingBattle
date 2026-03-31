@@ -38,6 +38,58 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
+## 本次改动（2026-03-31，Phase A2 多友方 ally_entries，当前工作区）
+
+本轮完成了 A2（多友方编排）主链路：
+
+- setup/runtime 新增 `ally_entries`（`{unit_id, count}`）支持，并保持 `ally_ids` 兼容：
+  - `scripts/prep/preparation_screen.gd`
+    - `build_battle_setup` 增加 `ally_entries` 解析与校验
+    - `ally_entries` 非空时优先于 `ally_ids`
+    - setup payload 同时写入展开后的 `ally_ids` 与原始 `ally_entries`
+    - 构筑摘要支持按 `ally_entries` 展开显示友军组成
+  - `scripts/battle_runtime/battle_runner.gd`
+    - setup 校验新增 `ally_entries` 路径（单位存在性、count、总数范围）
+  - `scripts/battle_runtime/battle_state.gd`
+    - 实体生成新增 `ally_entries` 展开逻辑（缺省回退 `ally_ids`）
+- 内容扩展（A2 友军矩阵）：
+  - `autoload/battle_content.gd` 新增友军单位：
+    - `ally_arc_shooter`（远程）
+    - `ally_guardian_sentinel`（个体强力）
+  - 新增 A2 测试包：
+    - `pack_a2_quantity_allies`
+    - `pack_a2_individual_allies`
+    - `pack_a2_mixed_allies`
+- 准备页测试预设新增 A2 三个入口：
+  - `A2 多友方（数量单位）`
+  - `A2 多友方（个体友方）`
+  - `A2 多友方（远近混搭）`
+- 新增/更新测试：
+  - 新增：
+    - `tests/runtime_ally_entries_expand_test.gd`
+    - `tests/runtime_ally_entries_mixed_role_test.gd`
+    - `tests/runtime_ally_entries_individual_unit_test.gd`
+  - 更新：
+    - `tests/preparation_test_mode_preset_test.gd`
+    - `tests/content_consistency_test.gd`
+
+验证结果（当前工作区）：
+
+- `tests/runtime_ally_entries_expand_test.gd` 通过
+- `tests/runtime_ally_entries_mixed_role_test.gd` 通过
+- `tests/runtime_ally_entries_individual_unit_test.gd` 通过
+- `tests/preparation_test_mode_preset_test.gd` 通过
+- `tests/content_consistency_test.gd` 通过
+- 兼容回归：
+  - `tests/preparation_variable_ally_count_test.gd` 通过
+  - `tests/runtime_variable_ally_count_test.gd` 通过
+  - `tests/preparation_setup_test.gd` 通过
+  - `tests/preparation_invalid_battle_test.gd` 通过
+  - `tests/runtime_invalid_setup_test.gd` 通过
+  - `tests/runtime_enemy_matrix_mixed_test.gd` 通过
+  - `tests/runtime_event_unresolved_summon_spawn_test.gd` 通过
+  - `tests/runtime_three_enemy_opening_test.gd` 通过
+
 ## 本次改动（2026-03-31，Phase A1 多敌人关卡矩阵，当前工作区）
 
 本轮完成了 A1（多敌人关卡矩阵）：

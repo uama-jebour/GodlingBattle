@@ -49,7 +49,7 @@ func _spawn_entities_from_setup(setup: Dictionary, battle_def: Dictionary, conte
 	var hero_id := str(setup.get("hero_id", ""))
 	if not hero_id.is_empty():
 		entities.append(_create_entity(hero_id, "hero", content.get_unit(hero_id), entities.size(), rng, randomized_spawn))
-	for ally_id in setup.get("ally_ids", []):
+	for ally_id in _resolve_ally_ids(setup):
 		var ally_id_text := str(ally_id)
 		entities.append(_create_entity(ally_id_text, "ally", content.get_unit(ally_id_text), entities.size(), rng, randomized_spawn))
 	for enemy_id in battle_def.get("enemy_units", []):
@@ -59,6 +59,22 @@ func _spawn_entities_from_setup(setup: Dictionary, battle_def: Dictionary, conte
 			unit_def = _fallback_enemy_def(enemy_id_text)
 		entities.append(_create_entity(enemy_id_text, "enemy", unit_def, entities.size(), rng, randomized_spawn))
 	return entities
+
+
+func _resolve_ally_ids(setup: Dictionary) -> Array:
+	var ally_entries: Array = setup.get("ally_entries", [])
+	if ally_entries.is_empty():
+		return setup.get("ally_ids", [])
+	var ally_ids: Array = []
+	for raw in ally_entries:
+		var entry := raw as Dictionary
+		var unit_id := str(entry.get("unit_id", ""))
+		var count := int(entry.get("count", 0))
+		if unit_id.is_empty() or count <= 0:
+			continue
+		for _i in range(count):
+			ally_ids.append(unit_id)
+	return ally_ids
 
 
 func _resolve_strategies(setup: Dictionary, content: Node) -> Array:

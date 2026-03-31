@@ -86,14 +86,32 @@ func _validate_setup(setup: Dictionary) -> String:
 	if hero_id.is_empty() or content.get_unit(hero_id).is_empty():
 		content.free()
 		return "missing_hero"
-	var ally_ids: Array = setup.get("ally_ids", [])
-	if ally_ids.size() < MIN_ALLY_COUNT or ally_ids.size() > MAX_ALLY_COUNT:
-		content.free()
-		return "invalid_ally_count"
-	for ally_id in ally_ids:
-		if content.get_unit(str(ally_id)).is_empty():
+	var ally_entries: Array = setup.get("ally_entries", [])
+	if not ally_entries.is_empty():
+		var total := 0
+		for raw in ally_entries:
+			var entry := raw as Dictionary
+			var unit_id := str(entry.get("unit_id", ""))
+			var count := int(entry.get("count", 0))
+			if unit_id.is_empty() or count <= 0:
+				content.free()
+				return "invalid_ally_count"
+			if content.get_unit(unit_id).is_empty():
+				content.free()
+				return "missing_ally"
+			total += count
+		if total < MIN_ALLY_COUNT or total > MAX_ALLY_COUNT:
 			content.free()
-			return "missing_ally"
+			return "invalid_ally_count"
+	else:
+		var ally_ids: Array = setup.get("ally_ids", [])
+		if ally_ids.size() < MIN_ALLY_COUNT or ally_ids.size() > MAX_ALLY_COUNT:
+			content.free()
+			return "invalid_ally_count"
+		for ally_id in ally_ids:
+			if content.get_unit(str(ally_id)).is_empty():
+				content.free()
+				return "missing_ally"
 	for strategy_id in setup.get("strategy_ids", []):
 		if content.get_strategy(str(strategy_id)).is_empty():
 			content.free()

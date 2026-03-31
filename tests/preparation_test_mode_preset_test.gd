@@ -65,6 +65,12 @@ func _run() -> void:
 			_failures.append("expected preset_a1_enemy_mixed")
 		if _find_metadata_index(preset_select, "preset_a1_enemy_elite") < 0:
 			_failures.append("expected preset_a1_enemy_elite")
+		if _find_metadata_index(preset_select, "preset_a2_quantity_allies") < 0:
+			_failures.append("expected preset_a2_quantity_allies")
+		if _find_metadata_index(preset_select, "preset_a2_individual_allies") < 0:
+			_failures.append("expected preset_a2_individual_allies")
+		if _find_metadata_index(preset_select, "preset_a2_mixed_allies") < 0:
+			_failures.append("expected preset_a2_mixed_allies")
 
 		var a1_index := _find_metadata_index(preset_select, "preset_a1_enemy_elite")
 		if a1_index >= 0:
@@ -75,6 +81,26 @@ func _run() -> void:
 			var a1_selection: Dictionary = screen.call("get_current_selection")
 			if str(a1_selection.get("battle_id", "")) != "battle_test_enemy_elite":
 				_failures.append("A1 elite preset should map to battle_test_enemy_elite")
+
+		var a2_index := _find_metadata_index(preset_select, "preset_a2_mixed_allies")
+		if a2_index >= 0:
+			preset_select.select(a2_index)
+			preset_select.item_selected.emit(a2_index)
+			apply_preset_button.pressed.emit()
+			await process_frame
+			var a2_selection: Dictionary = screen.call("get_current_selection")
+			var ally_entries: Array = a2_selection.get("ally_entries", [])
+			if ally_entries.size() != 2:
+				_failures.append("A2 mixed preset should define two ally_entries rows")
+			else:
+				var first := ally_entries[0] as Dictionary
+				var second := ally_entries[1] as Dictionary
+				if str(first.get("unit_id", "")) != "ally_hound_remnant" or int(first.get("count", 0)) != 2:
+					_failures.append("A2 mixed preset first row should be ally_hound_remnant x2")
+				if str(second.get("unit_id", "")) != "ally_arc_shooter" or int(second.get("count", 0)) != 1:
+					_failures.append("A2 mixed preset second row should be ally_arc_shooter x1")
+			if str(a2_selection.get("battle_id", "")) != "battle_void_gate_alpha":
+				_failures.append("A2 mixed preset should use battle_void_gate_alpha")
 
 	screen.queue_free()
 	await process_frame

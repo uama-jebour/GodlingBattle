@@ -17,11 +17,15 @@ const PRESET_A1_ENEMY_MELEE := "preset_a1_enemy_melee"
 const PRESET_A1_ENEMY_RANGED := "preset_a1_enemy_ranged"
 const PRESET_A1_ENEMY_MIXED := "preset_a1_enemy_mixed"
 const PRESET_A1_ENEMY_ELITE := "preset_a1_enemy_elite"
+const PRESET_A2_QUANTITY_ALLIES := "preset_a2_quantity_allies"
+const PRESET_A2_INDIVIDUAL_ALLIES := "preset_a2_individual_allies"
+const PRESET_A2_MIXED_ALLIES := "preset_a2_mixed_allies"
 const DEFAULT_ALLY_UNIT_ID := "ally_hound_remnant"
 
 var _current_selection: Dictionary = {
 	"hero_id": "hero_angel",
 	"ally_ids": DEFAULT_ALLY_IDS.duplicate(),
+	"ally_entries": [],
 	"strategy_ids": [],
 	"battle_id": "battle_void_gate_alpha"
 }
@@ -122,7 +126,8 @@ func _apply_selection_to_controls() -> void:
 	_is_syncing_controls = true
 	_select_option_by_metadata(hero_select, String(_current_selection.get("hero_id", "")))
 	_select_option_by_metadata(battle_select, String(_current_selection.get("battle_id", "")))
-	_select_option_by_metadata(ally_count_select, "ally_count_%d" % int((_current_selection.get("ally_ids", []) as Array).size()))
+	var ally_ids := _resolved_ally_ids_from_selection(_current_selection)
+	_select_option_by_metadata(ally_count_select, "ally_count_%d" % ally_ids.size())
 	var strategy_ids: Array = _current_selection.get("strategy_ids", [])
 	for strategy_id in _strategy_checkboxes.keys():
 		var checkbox := _strategy_checkboxes[strategy_id] as CheckBox
@@ -145,6 +150,7 @@ func _pull_selection_from_controls() -> void:
 	_current_selection = {
 		"hero_id": _selected_metadata(hero_select, "hero_angel"),
 		"ally_ids": ally_ids.duplicate(),
+		"ally_entries": [],
 		"strategy_ids": strategy_ids,
 		"battle_id": _selected_metadata(battle_select, "battle_void_gate_alpha")
 	}
@@ -220,19 +226,37 @@ func _on_strategy_toggled(_enabled: bool) -> void:
 func build_battle_setup(selection: Dictionary) -> Dictionary:
 	var content: Node = BATTLE_CONTENT.new()
 	var hero_id := String(selection.get("hero_id", ""))
+	var ally_entries: Array[Dictionary] = _normalize_ally_entries(selection)
 	var ally_ids: Array = selection.get("ally_ids", [])
 	var strategy_ids: Array = selection.get("strategy_ids", [])
 	var battle_id := String(selection.get("battle_id", ""))
 	if hero_id.is_empty() or content.get_unit(hero_id).is_empty():
 		content.free()
 		return {"invalid_reason": "missing_hero"}
-	if not _is_valid_ally_count(ally_ids):
-		content.free()
-		return {"invalid_reason": "invalid_ally_count"}
-	for ally_id in ally_ids:
-		if content.get_unit(String(ally_id)).is_empty():
+	if not ally_entries.is_empty():
+		var total := 0
+		for entry in ally_entries:
+			var unit_id := str(entry.get("unit_id", ""))
+			var count := int(entry.get("count", 0))
+			if unit_id.is_empty() or count <= 0:
+				content.free()
+				return {"invalid_reason": "invalid_ally_count"}
+			if content.get_unit(unit_id).is_empty():
+				content.free()
+				return {"invalid_reason": "missing_ally"}
+			total += count
+		if total < MIN_ALLY_COUNT or total > MAX_ALLY_COUNT:
 			content.free()
-			return {"invalid_reason": "missing_ally"}
+			return {"invalid_reason": "invalid_ally_count"}
+		ally_ids = _expand_ally_ids_from_entries(ally_entries)
+	else:
+		if not _is_valid_ally_count(ally_ids):
+			content.free()
+			return {"invalid_reason": "invalid_ally_count"}
+		for ally_id in ally_ids:
+			if content.get_unit(String(ally_id)).is_empty():
+				content.free()
+				return {"invalid_reason": "missing_ally"}
 	for strategy_id in strategy_ids:
 		if content.get_strategy(String(strategy_id)).is_empty():
 			content.free()
@@ -250,6 +274,7 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 	return {
 		"hero_id": hero_id,
 		"ally_ids": ally_ids.duplicate(),
+		"ally_entries": ally_entries.duplicate(true),
 		"strategy_ids": strategy_ids.duplicate(),
 		"battle_id": battle_id,
 		"seed": int(selection.get("seed", 0)),
@@ -313,7 +338,7 @@ func _strategy_total_cost(selection: Dictionary) -> int:
 func _format_selection_summary(current_selection: Dictionary) -> String:
 	var content: Node = BATTLE_CONTENT.new()
 	var hero_name := _resolve_unit_name(content, String(current_selection.get("hero_id", "")))
-	var ally_names := _resolve_unit_names(content, current_selection.get("ally_ids", []))
+	var ally_names := _resolve_unit_names(content, _resolved_ally_ids_from_selection(current_selection))
 	var strategy_names := _resolve_strategy_names(content, current_selection.get("strategy_ids", []))
 	var battle_name := _resolve_battle_name(content, String(current_selection.get("battle_id", "")))
 	content.free()
@@ -528,6 +553,35 @@ func _ally_ids_for_count(ally_count: int) -> Array[String]:
 	return ally_ids
 
 
+func _normalize_ally_entries(selection: Dictionary) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for raw in selection.get("ally_entries", []):
+		var row := raw as Dictionary
+		var unit_id := str(row.get("unit_id", ""))
+		var count := int(row.get("count", 0))
+		if unit_id.is_empty() or count <= 0:
+			continue
+		rows.append({"unit_id": unit_id, "count": count})
+	return rows
+
+
+func _expand_ally_ids_from_entries(ally_entries: Array[Dictionary]) -> Array[String]:
+	var ally_ids: Array[String] = []
+	for entry in ally_entries:
+		var unit_id := str(entry.get("unit_id", ""))
+		var count := int(entry.get("count", 0))
+		for _i in range(count):
+			ally_ids.append(unit_id)
+	return ally_ids
+
+
+func _resolved_ally_ids_from_selection(selection: Dictionary) -> Array:
+	var ally_entries: Array[Dictionary] = _normalize_ally_entries(selection)
+	if not ally_entries.is_empty():
+		return _expand_ally_ids_from_entries(ally_entries)
+	return selection.get("ally_ids", [])
+
+
 func _rebuild_test_preset_options() -> void:
 	test_preset_select.clear()
 	_add_test_preset_option(0, "测试预设：手动配置", PRESET_NONE)
@@ -539,6 +593,9 @@ func _rebuild_test_preset_options() -> void:
 	_add_test_preset_option(6, "测试预设：A1 多敌人（全远程）", PRESET_A1_ENEMY_RANGED)
 	_add_test_preset_option(7, "测试预设：A1 多敌人（近远混合）", PRESET_A1_ENEMY_MIXED)
 	_add_test_preset_option(8, "测试预设：A1 多敌人（精英主导）", PRESET_A1_ENEMY_ELITE)
+	_add_test_preset_option(9, "测试预设：A2 多友方（数量单位）", PRESET_A2_QUANTITY_ALLIES)
+	_add_test_preset_option(10, "测试预设：A2 多友方（个体友方）", PRESET_A2_INDIVIDUAL_ALLIES)
+	_add_test_preset_option(11, "测试预设：A2 多友方（远近混搭）", PRESET_A2_MIXED_ALLIES)
 
 
 func _add_test_preset_option(index: int, text: String, metadata: String) -> void:
@@ -552,6 +609,7 @@ func _apply_test_preset(preset_id: String) -> void:
 			_current_selection = {
 				"hero_id": "hero_angel",
 				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
 				"strategy_ids": [],
 				"battle_id": "battle_void_gate_test_baseline"
 			}
@@ -559,6 +617,7 @@ func _apply_test_preset(preset_id: String) -> void:
 			_current_selection = {
 				"hero_id": "hero_angel",
 				"ally_ids": _ally_ids_for_count(0),
+				"ally_entries": [],
 				"strategy_ids": ["strat_chill_wave"],
 				"battle_id": "battle_void_gate_test_baseline"
 			}
@@ -566,6 +625,7 @@ func _apply_test_preset(preset_id: String) -> void:
 			_current_selection = {
 				"hero_id": "hero_angel",
 				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
 				"strategy_ids": ["strat_void_echo"],
 				"battle_id": "battle_void_gate_alpha"
 			}
@@ -573,6 +633,7 @@ func _apply_test_preset(preset_id: String) -> void:
 			_current_selection = {
 				"hero_id": "hero_angel",
 				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
 				"strategy_ids": ["strat_counter_demon_summon"],
 				"battle_id": "battle_void_gate_alpha"
 			}
@@ -580,6 +641,7 @@ func _apply_test_preset(preset_id: String) -> void:
 			_current_selection = {
 				"hero_id": "hero_angel",
 				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
 				"strategy_ids": [],
 				"battle_id": "battle_test_enemy_melee"
 			}
@@ -587,6 +649,7 @@ func _apply_test_preset(preset_id: String) -> void:
 			_current_selection = {
 				"hero_id": "hero_angel",
 				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
 				"strategy_ids": [],
 				"battle_id": "battle_test_enemy_ranged"
 			}
@@ -594,6 +657,7 @@ func _apply_test_preset(preset_id: String) -> void:
 			_current_selection = {
 				"hero_id": "hero_angel",
 				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
 				"strategy_ids": [],
 				"battle_id": "battle_test_enemy_mixed"
 			}
@@ -601,8 +665,40 @@ func _apply_test_preset(preset_id: String) -> void:
 			_current_selection = {
 				"hero_id": "hero_angel",
 				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
 				"strategy_ids": [],
 				"battle_id": "battle_test_enemy_elite"
+			}
+		PRESET_A2_QUANTITY_ALLIES:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": [],
+				"ally_entries": [
+					{"unit_id": "ally_hound_remnant", "count": 3}
+				],
+				"strategy_ids": [],
+				"battle_id": "battle_void_gate_alpha"
+			}
+		PRESET_A2_INDIVIDUAL_ALLIES:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": [],
+				"ally_entries": [
+					{"unit_id": "ally_guardian_sentinel", "count": 1}
+				],
+				"strategy_ids": [],
+				"battle_id": "battle_void_gate_alpha"
+			}
+		PRESET_A2_MIXED_ALLIES:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": [],
+				"ally_entries": [
+					{"unit_id": "ally_hound_remnant", "count": 2},
+					{"unit_id": "ally_arc_shooter", "count": 1}
+				],
+				"strategy_ids": [],
+				"battle_id": "battle_void_gate_alpha"
 			}
 		_:
 			pass

@@ -10,9 +10,26 @@ func _initialize() -> void:
 func _run() -> void:
 	var content: Node = load("res://autoload/battle_content.gd").new()
 	for pack in content.get_test_packs():
+		var pack_id := str(pack.get("pack_id", ""))
 		var battle_id := str(pack.get("battle_id", ""))
-		if not pack.has("ally_ids"):
-			_failures.append("pack missing ally_ids: %s" % str(pack.get("pack_id", "")))
+		var has_ally_ids: bool = pack.has("ally_ids")
+		var has_ally_entries: bool = pack.has("ally_entries")
+		var ally_ids: Array = pack.get("ally_ids", [])
+		var ally_entries: Array = pack.get("ally_entries", [])
+		if not has_ally_ids and not has_ally_entries:
+			_failures.append("pack should define ally_ids or ally_entries: %s" % pack_id)
+		for ally_id in ally_ids:
+			if content.get_unit(str(ally_id)).is_empty():
+				_failures.append("missing ally unit: %s in %s" % [ally_id, pack_id])
+		for raw in ally_entries:
+			var entry := raw as Dictionary
+			var unit_id := str(entry.get("unit_id", ""))
+			var count := int(entry.get("count", 0))
+			if unit_id.is_empty() or count <= 0:
+				_failures.append("invalid ally_entries row in %s" % pack_id)
+				continue
+			if content.get_unit(unit_id).is_empty():
+				_failures.append("missing ally_entries unit: %s in %s" % [unit_id, pack_id])
 		if content.get_battle(battle_id).is_empty():
 			_failures.append("missing battle: %s" % battle_id)
 		for strategy_id in pack.get("strategy_ids", []):
