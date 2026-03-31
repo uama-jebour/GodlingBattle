@@ -6,6 +6,13 @@ const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 const EMPTY_BRIEF_TEXT := "本帧动态：暂无关键事件"
 const EMPTY_DETAIL_TEXT := "暂无战术明细"
 
+# Key event colored tag definitions
+const TAG_HERO_DOWN := {"text": "[危急]", "bg": "#FF4444", "fg": "#FFFFFF"}
+const TAG_ALLY_DOWN := {"text": "[损失]", "bg": "#FF8C00", "fg": "#FFFFFF"}
+const TAG_ENEMY_DOWN := {"text": "[击杀]", "bg": "#00C853", "fg": "#FFFFFF"}
+const TAG_UNRESOLVED := {"text": "[警报]", "bg": "#9C27B0", "fg": "#FFFFFF"}
+const TAG_MISSED := {"text": "[错过]", "bg": "#FFD700", "fg": "#333333"}
+
 var _resolver := DISPLAY_NAME_RESOLVER.new()
 var _warning_seconds_by_event_id: Dictionary = {}
 var _warning_seconds_cache_ready := false
@@ -185,3 +192,152 @@ func _strategy_cast_mode_label(row: Dictionary) -> String:
 	if cast_mode == "passive":
 		return "被动生效"
 	return "施放"
+
+
+# Phase15+: Colored tags for key events
+func build_key_event_lines_with_tags(rows: Array, current_tick: int, limit: int = 8) -> Array[String]:
+	var tagged_lines: Array[String] = []
+	for row in rows:
+		var tick := int(row.get("tick", -1))
+		if tick < 0 or tick > current_tick:
+			continue
+		var row_type := str(row.get("type", ""))
+		var tag_dict := _get_tag_for_event_type(row_type, row)
+		var detail_line := _build_detail_line(row, tick)
+		if tag_dict != null and not tag_dict.is_empty():
+			var tag_bb := "[color=%s][color=%s]%s[/color][/color]" % [tag_dict.bg, tag_dict.fg, tag_dict.text]
+			tagged_lines.append("%s %s" % [tag_bb, detail_line])
+		else:
+			tagged_lines.append(detail_line)
+	if tagged_lines.is_empty():
+		return ["暂无关键事件"]
+	var safe_limit := maxi(1, limit)
+	var start_index := maxi(0, tagged_lines.size() - safe_limit)
+	return tagged_lines.slice(start_index, tagged_lines.size())
+
+
+func _get_tag_for_event_type(event_type: String, row: Dictionary) -> Dictionary:
+	match event_type:
+		"hero_down":
+			return TAG_HERO_DOWN
+		"ally_down":
+			return TAG_ALLY_DOWN
+		"enemy_down":
+			return TAG_ENEMY_DOWN
+		"event_unresolved_effect":
+			return TAG_UNRESOLVED
+		"event_resolve":
+			if not bool(row.get("responded", false)):
+				return TAG_MISSED
+	return {}
+
+
+# Phase15+: Phase summary cards
+class PhaseData:
+	var name: String
+	var start_tick: int
+	var end_tick: int
+	var hero_down_count: int = 0
+	var ally_down_count: int = 0
+	var enemy_down_count: int = 0
+	var unresolved_effect_count: int = 0
+	var missed_event_count: int = 0
+	var total_event_resolves: int = 0
+	var responded_event_count: int = 0
+	var strategy_cast_count: int = 0
+
+	func get_response_rate() -> float:
+		if total_event_resolves == 0:
+			return 1.0
+		return float(responded_event_count) / float(total_event_resolves)
+
+	func get_summary() -> String:
+		var net_kills := enemy_down_count - ally_down_count
+		if net_kills >= 2:
+			return "我方优势"
+		elif net_kills <= -2:
+			return "敌方压制"
+		elif hero_down_count > 0:
+			return "危机时刻"
+		return "僵持中"
+
+
+func build_phase_summary_cards(timeline: Array, event_rows: Array) -> Array[String]:
+	if timeline.is_empty():
+		return []
+
+	var total_ticks := int((timeline[-1] as Dictionary).get("tick", 0))
+	var final_tick := total_ticks
+
+	# Define phase boundaries
+	var phases := []
+	phases.append(_create_phase_data("开局", 0, 60))
+	if final_tick > 120:
+		phases.append(_create_phase_data("中期", 61, mini(300, final_tick)))
+	if final_tick > 180:
+		phases.append(_create_phase_data("后期", 301, final_tick))
+
+	# Collect stats for each phase
+	for phase: PhaseData in phases:
+		_collect_phase_stats(phase, event_rows)
+
+	# Generate BBCode cards
+	var cards: Array[String] = []
+	for phase: PhaseData in phases:
+		cards.append(_build_phase_card_bbcode(phase))
+
+	return cards
+
+
+func _create_phase_data(name: String, start: int, end: int) -> PhaseData:
+	var phase := PhaseData.new()
+	phase.name = name
+	phase.start_tick = start
+	phase.end_tick = end
+	return phase
+
+
+func _collect_phase_stats(phase: PhaseData, event_rows: Array) -> void:
+	for row in event_rows:
+		var tick := int(row.get("tick", -1))
+		if tick < phase.start_tick or tick > phase.end_tick:
+			continue
+
+		var row_type := str(row.get("type", ""))
+		match row_type:
+			"hero_down":
+				phase.hero_down_count += 1
+			"ally_down":
+				phase.ally_down_count += 1
+			"enemy_down":
+				phase.enemy_down_count += 1
+			"event_unresolved_effect":
+				phase.unresolved_effect_count += 1
+			"event_resolve":
+				phase.total_event_resolves += 1
+				if bool(row.get("responded", false)):
+					phase.responded_event_count += 1
+				else:
+					phase.missed_event_count += 1
+			"strategy_cast":
+				phase.strategy_cast_count += 1
+
+
+func _build_phase_card_bbcode(phase: PhaseData) -> String:
+	var response_rate := phase.get_response_rate()
+	var response_percent := str(snapped(response_rate * 100, 0.1))
+	var summary := phase.get_summary()
+
+	var lines: PackedStringArray = []
+	lines.append("[color=#E8EEF5]━ %s (Tick %d-%d) ━[/color]" % [phase.name, phase.start_tick, phase.end_tick])
+	lines.append("[color=#5C6B7F]击杀 %d  损失 %d  %s %d[/color]" % [
+		phase.enemy_down_count,
+		phase.ally_down_count,
+		"危急" if phase.hero_down_count > 0 else "危机",
+		phase.hero_down_count
+	])
+	lines.append("[color=#5C6B7F]事件响应率 %s%%  策略施放 %d次[/color]" % [response_percent, phase.strategy_cast_count])
+	lines.append("[color=#78C8FF]%s[/color]" % summary)
+	lines.append("")
+
+	return "\n".join(lines)

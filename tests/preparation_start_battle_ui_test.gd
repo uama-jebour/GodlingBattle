@@ -22,7 +22,7 @@ func _run() -> void:
 
 	await process_frame
 
-	var error_label := screen.get_node("Layout/ErrorLabel") as Label
+	var error_label := screen.get_node("ScrollContainer/Layout/ErrorLabel") as Label
 	assert(error_label != null)
 	assert(not error_label.text.is_empty())
 	assert(error_label.text.find("无法开始出战") != -1)

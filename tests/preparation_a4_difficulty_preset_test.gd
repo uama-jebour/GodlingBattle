@@ -14,8 +14,8 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 
-	var preset_select := screen.get_node_or_null("Layout/TestPresetSelect") as OptionButton
-	var apply_preset_button := screen.get_node_or_null("Layout/ApplyPresetButton") as Button
+	var preset_select := screen.get_node_or_null("ScrollContainer/Layout/TestPresetSelect") as OptionButton
+	var apply_preset_button := screen.get_node_or_null("ScrollContainer/Layout/ApplyPresetButton") as Button
 	if preset_select == null or apply_preset_button == null:
 		_failures.append("missing preset controls")
 		_finish_with_cleanup(screen)

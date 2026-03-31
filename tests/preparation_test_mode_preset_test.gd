@@ -14,10 +14,10 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 
-	var battle_select := screen.get_node_or_null("Layout/BattleSelect") as OptionButton
-	var ally_count_select := screen.get_node_or_null("Layout/AllyCountSelect") as OptionButton
-	var preset_select := screen.get_node_or_null("Layout/TestPresetSelect") as OptionButton
-	var apply_preset_button := screen.get_node_or_null("Layout/ApplyPresetButton") as Button
+	var battle_select := screen.get_node_or_null("ScrollContainer/Layout/BattleSelect") as OptionButton
+	var ally_count_select := screen.get_node_or_null("ScrollContainer/Layout/AllyCountSelect") as OptionButton
+	var preset_select := screen.get_node_or_null("ScrollContainer/Layout/TestPresetSelect") as OptionButton
+	var apply_preset_button := screen.get_node_or_null("ScrollContainer/Layout/ApplyPresetButton") as Button
 	if battle_select == null:
 		_failures.append("expected Layout/BattleSelect")
 	if ally_count_select == null:

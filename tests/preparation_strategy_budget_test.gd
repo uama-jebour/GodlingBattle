@@ -21,15 +21,15 @@ func _run() -> void:
 	})
 	await process_frame
 
-	var budget_label := screen.get_node("Layout/BudgetLabel") as Label
+	var budget_label := screen.get_node("ScrollContainer/Layout/BudgetLabel") as Label
 	assert(budget_label != null)
 	assert(budget_label.text == "预算: 18 / 16")
 
-	var start_btn := screen.get_node("Layout/StartBattleButton") as Button
+	var start_btn := screen.get_node("ScrollContainer/Layout/StartBattleButton") as Button
 	assert(start_btn != null)
 	assert(start_btn.disabled)
 
-	var error_label := screen.get_node("Layout/ErrorLabel") as Label
+	var error_label := screen.get_node("ScrollContainer/Layout/ErrorLabel") as Label
 	assert(error_label != null)
 	assert(error_label.text == "战技预算超出上限")
 

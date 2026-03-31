@@ -38,19 +38,19 @@ var _current_selection: Dictionary = {
 var _is_syncing_controls := false
 var _strategy_checkboxes: Dictionary = {}
 
-@onready var layout: VBoxContainer = $Layout
-@onready var title_label: Label = $Layout/TitleLabel
-@onready var hero_select: OptionButton = $Layout/HeroSelect
-@onready var battle_select: OptionButton = $Layout/BattleSelect
-@onready var ally_count_select: OptionButton = $Layout/AllyCountSelect
-@onready var test_preset_select: OptionButton = $Layout/TestPresetSelect
-@onready var apply_preset_button: Button = $Layout/ApplyPresetButton
-@onready var strategy_list: VBoxContainer = $Layout/StrategyList
-@onready var budget_label: Label = $Layout/BudgetLabel
-@onready var selection_summary: Label = $Layout/SelectionSummary
-@onready var battle_summary: Label = $Layout/BattleSummary
-@onready var error_label: Label = $Layout/ErrorLabel
-@onready var start_battle_button: Button = $Layout/StartBattleButton
+@onready var layout: VBoxContainer = $ScrollContainer/Layout
+@onready var title_label: Label = $ScrollContainer/Layout/TitleLabel
+@onready var hero_select: OptionButton = $ScrollContainer/Layout/HeroSelect
+@onready var battle_select: OptionButton = $ScrollContainer/Layout/BattleSelect
+@onready var ally_count_select: OptionButton = $ScrollContainer/Layout/AllyCountSelect
+@onready var test_preset_select: OptionButton = $ScrollContainer/Layout/TestPresetSelect
+@onready var apply_preset_button: Button = $ScrollContainer/Layout/ApplyPresetButton
+@onready var strategy_list: VBoxContainer = $ScrollContainer/Layout/StrategyList
+@onready var budget_label: Label = $ScrollContainer/Layout/BudgetLabel
+@onready var selection_summary: Label = $ScrollContainer/Layout/SelectionSummary
+@onready var battle_summary: Label = $ScrollContainer/Layout/BattleSummary
+@onready var error_label: Label = $ScrollContainer/Layout/ErrorLabel
+@onready var start_battle_button: Button = $ScrollContainer/Layout/StartBattleButton
 
 
 func _ready() -> void:

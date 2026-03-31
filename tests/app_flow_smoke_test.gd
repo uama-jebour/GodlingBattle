@@ -23,7 +23,7 @@ func _run() -> void:
 	var prep_screen := _current_screen(screen_host)
 	assert(prep_screen != null)
 	assert(prep_screen.name == "PreparationScreen")
-	assert(prep_screen.get_node_or_null("Layout/StartBattleButton") != null)
+	assert(prep_screen.get_node_or_null("ScrollContainer/Layout/StartBattleButton") != null)
 
 	prep_screen.start_battle({
 		"hero_id": "hero_angel",
@@ -80,7 +80,7 @@ func _run() -> void:
 	var prep_again := _current_screen(screen_host)
 	assert(prep_again != null)
 	assert(prep_again.name == "PreparationScreen")
-	assert(prep_again.get_node_or_null("Layout/StartBattleButton") != null)
+	assert(prep_again.get_node_or_null("ScrollContainer/Layout/StartBattleButton") != null)
 	assert(session_state.last_timeline.is_empty())
 	assert(session_state.last_battle_result.is_empty())
 

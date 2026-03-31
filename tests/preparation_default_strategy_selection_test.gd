@@ -14,7 +14,7 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 
-	var strategy_list := screen.get_node_or_null("Layout/StrategyList") as VBoxContainer
+	var strategy_list := screen.get_node_or_null("ScrollContainer/Layout/StrategyList") as VBoxContainer
 	if strategy_list == null:
 		_failures.append("missing strategy list")
 	else:

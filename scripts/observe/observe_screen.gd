@@ -21,13 +21,13 @@ const STRATEGY_NAME_POPUP_LINGER_TICKS := 7
 const STRATEGY_NAME_POPUP_SCALE_BOOST := 0.22
 const STRATEGY_FLASH_LINGER_TICKS := 3
 const STRATEGY_FLASH_MAX_ALPHA := 0.17
-const FONT_SIZE_PANEL_TITLE := 28
-const FONT_SIZE_PANEL_BODY := 26
-const FONT_SIZE_HUD_TICK := 50
-const FONT_SIZE_HUD_EVENT := 36
+const FONT_SIZE_PANEL_TITLE := 22
+const FONT_SIZE_PANEL_BODY := 20
+const FONT_SIZE_HUD_TICK := 38
+const FONT_SIZE_HUD_EVENT := 28
 const FONT_SIZE_STRATEGY_POPUP := 46
-const HUD_BG_TOP := 14.0
-const HUD_BG_HEIGHT := 62.0
+const HUD_BG_TOP := 10.0
+const HUD_BG_HEIGHT := 48.0
 const LOG_BAR_COLOR_KEY := "#E7C96A"
 const LOG_BAR_COLOR_WARNING := "#E59A55"
 const LOG_BAR_COLOR_CAST := "#78C8FF"
@@ -2022,11 +2022,26 @@ func _refresh_battle_log_panel() -> void:
 
 
 func _build_battle_log_lines(limit: int = 18) -> Array[String]:
-	var key_lines := _battle_report_formatter.build_key_event_lines(_event_rows, _display_tick(), 8)
+	# Use tagged version for key events
+	var key_lines := _battle_report_formatter.build_key_event_lines_with_tags(_event_rows, _display_tick(), 8)
 	var normal_lines := _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
+
+	# Generate phase summary cards (between key events and regular logs)
+	var phase_cards := _battle_report_formatter.build_phase_summary_cards(_timeline, _event_rows)
+
 	var lines: Array[String] = ["关键事件"]
 	for line in key_lines:
 		lines.append("%s %s" % [_log_prefix_for_line(String(line)), String(line)])
+
+	# Insert phase summary cards
+	if not phase_cards.is_empty():
+		lines.append("")
+		lines.append("阶段汇总")
+		# Strip BBCode from cards for plain text version
+		for card in phase_cards:
+			var plain_card := _strip_bbcode(card)
+			lines.append(plain_card)
+
 	lines.append("")
 	lines.append("普通日志")
 	for line in normal_lines:
@@ -2034,14 +2049,45 @@ func _build_battle_log_lines(limit: int = 18) -> Array[String]:
 	return lines
 
 
+func _strip_bbcode(text: String) -> String:
+	var result := text
+	# Remove [color=...] tags
+	while true:
+		var start_idx := result.find("[color=")
+		if start_idx == -1:
+			break
+		var end_idx := result.find("]", start_idx)
+		if end_idx == -1:
+			break
+		result = result.substr(0, start_idx) + result.substr(end_idx + 1)
+	# Remove [/color] tags
+	result = result.replace("[/color]", "")
+	# Remove [b] and [/b] tags
+	result = result.replace("[b]", "").replace("[/b]", "")
+	return result
+
+
 func _build_battle_log_rich_text(limit: int = 18) -> String:
-	var key_lines := _battle_report_formatter.build_key_event_lines(_event_rows, _display_tick(), 8)
+	# Use tagged version for key events
+	var key_lines := _battle_report_formatter.build_key_event_lines_with_tags(_event_rows, _display_tick(), 8)
 	var normal_lines := _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
+
+	# Generate phase summary cards (between key events and regular logs)
+	var phase_cards := _battle_report_formatter.build_phase_summary_cards(_timeline, _event_rows)
+
 	var rows: PackedStringArray = []
 	rows.append("[b][color=#F2F5F8]关键事件[/color][/b]")
 	for line in key_lines:
 		var text := String(line)
-		rows.append("[color=%s]▌[/color] [color=#EAF0F5]%s[/color]" % [_log_color_for_line(text), text])
+		rows.append("[color=%s]▌[/color] [color=#EAF0F5]%s[/color]" % [LOG_BAR_COLOR_KEY, text])
+
+	# Insert phase summary cards
+	if not phase_cards.is_empty():
+		rows.append("")
+		rows.append("[b][color=#F2F5F8]阶段汇总[/color][/b]")
+		for card in phase_cards:
+			rows.append(card)
+
 	rows.append("")
 	rows.append("[b][color=#F2F5F8]普通日志[/color][/b]")
 	for line in normal_lines:

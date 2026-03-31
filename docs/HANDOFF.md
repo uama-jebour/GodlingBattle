@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-`GodlingBattle` 已完成 Phase1-Phase5、Phase6、Phase7、Phase8、Phase9、Phase10、Phase11（Task1-Task2 完成）、Phase12（Task1 完成）、Phase13（Task1-Task4 完成）、Phase14（Task1-Task5 完成），并完成 Phase15 首轮可读性增强（槽位布局/死亡残影移除/日志分层/字号提升），当前主流程为：
+`GodlingBattle` 已完成 Phase1-Phase5、Phase6、Phase7、Phase8、Phase9、Phase10、Phase11（Task1-Task2 完成）、Phase12（Task1 完成）、Phase13（Task1-Task4 完成）、Phase14（Task1-Task5 完成），并完成 Phase15（首轮可读性增强 + 战报中心可视化增强：关键事件彩色标签/阶段汇总卡片），当前主流程为：
 
 `出战前准备（可操作） -> 自动观战（四象限 UI / 可暂停 / 倍速 / 战报联动） -> 结果结算（可再战/返回）`
 
@@ -23,6 +23,7 @@
 - Phase13（结果页中文化兜底 + 观战双层战报中心）：已完成（Task1-Task4）
 - Phase14（Observe 四象限战斗 UI）：已完成（Task1-Task5）
 - Phase15（Observe 可读性增强首轮）：已完成（Task1-Task5）
+- Phase15（Observe 战报中心可视化增强）：已完成（关键事件彩色标签 + 阶段汇总卡片）
 
 > 文档唯一性：全局进度只在本文件维护；其他文档仅引用。规则见 [文档唯一性约定.md](./文档唯一性约定.md)。
 
@@ -37,6 +38,57 @@
 
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
+
+## 本次改动（2026-04-01，Phase15 战报中心可视化增强 + 准备页滚动布局收口，当前工作区）
+
+本轮完成了两条主线：
+
+- Observe 战报中心可视化增强（Phase15 建议项落地）：
+  - 关键事件增加彩色标签输出（`[危急] / [损失] / [击杀] / [警报] / [错过]`）
+  - 战斗日志结构升级为：
+    - `关键事件`
+    - `阶段汇总`（开局/中期/后期卡片，含击杀/损失/危急、事件响应率、策略施放、阶段结论）
+    - `普通日志`
+  - `observe_screen.gd` 增加 BBCode 与 plain-text 双路径渲染兼容
+- 出战前准备滚动布局收口：
+  - `PreparationScreen` 改为 `ScrollContainer/Layout` 层级，避免小高度窗口下“开始出战”被挤出首屏
+  - `preparation_screen.gd` onready 节点路径同步迁移
+  - 准备页相关测试与流程 smoke 更新到新节点路径
+
+涉及文件（节选）：
+
+- `scripts/observe/battle_report_formatter.gd`
+- `scripts/observe/observe_screen.gd`
+- `scenes/observe/observe_screen.tscn`
+- `scripts/prep/preparation_screen.gd`
+- `scenes/prep/preparation_screen.tscn`
+- `tests/observe_key_event_colored_tags_test.gd`（新增）
+- `tests/observe_phase_summary_cards_test.gd`（新增）
+- `tests/observe_roster_log_panel_test.gd`（更新）
+- `tests/app_flow_smoke_test.gd`（更新）
+- `tests/ui_readability_localization_test.gd`（更新）
+- `tests/preparation_*.gd` 多文件（路径断言更新）
+
+验证结果（当前工作区）：
+
+- 关键回归通过：
+  - `tests/app_flow_smoke_test.gd` 通过
+  - `tests/ui_readability_localization_test.gd` 通过
+  - `tests/preparation_screen_ui_smoke_test.gd` 通过
+  - `tests/preparation_controls_smoke_test.gd` 通过
+  - `tests/preparation_start_battle_ui_test.gd` 通过
+  - `tests/preparation_strategy_budget_test.gd` 通过
+  - `tests/preparation_default_strategy_selection_test.gd` 通过
+  - `tests/preparation_multi_strategy_selection_test.gd` 通过
+  - `tests/preparation_test_mode_preset_test.gd` 通过
+  - `tests/preparation_a3_active_preset_test.gd` 通过
+  - `tests/preparation_a4_difficulty_preset_test.gd` 通过
+  - `tests/observe_roster_log_panel_test.gd` 通过
+  - `tests/observe_key_event_colored_tags_test.gd` 通过
+  - `tests/observe_phase_summary_cards_test.gd` 通过
+  - `tests/observe_battle_overview_summary_test.gd` 通过
+- 全量回归尝试说明：
+  - 按 `tests/*.gd` 循环执行时，在 `tests/observe_battlefield_solver_motion_fidelity_test.gd` 处失败（当前输出：`enemy_wandering_demon_4: 178.593 > 130.000`、`enemy_animated_machine_5: 154.398 > 130.000`）
 
 ## 本次改动（2026-03-31，准备页可见性与按钮辨识度优化，当前工作区）
 
@@ -441,7 +493,7 @@
 
 建议优先推进一件事：
 
-1. 在 Observe 战报中心增加“关键事件彩色标签 + 阶段汇总卡片”，让用户 3 秒内看清战局转折与胜负原因
+1. 对已上线的“关键事件彩色标签 + 阶段汇总卡片”补充交互增强（按类型筛选/折叠、颜色无障碍对比度校验），并收口 `observe_battlefield_solver_motion_fidelity_test.gd` 失败项
 
 ## 接手操作清单（10 分钟版）
 
@@ -461,7 +513,7 @@
 
 ## 明天接着开工时可直接对 Codex 说的话
 
-`请先阅读 AGENTS.MD 与 docs/HANDOFF.md 的“当前状态+最新一次本次改动”，然后基于当前进度继续推进 phase15（Observe 战报中心可视化增强）。`
+`请先阅读 AGENTS.MD 与 docs/HANDOFF.md 的“当前状态+最新一次本次改动”，然后基于当前进度继续推进 phase15 收口（战报中心交互增强 + motion fidelity 回归修复）。`
 
 ## 提醒
 

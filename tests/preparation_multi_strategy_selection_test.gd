@@ -14,20 +14,20 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 
-	_expect_node(screen, "Layout/StrategyList")
-	_expect_node(screen, "Layout/StrategyList/Strategy_strat_void_echo")
-	_expect_node(screen, "Layout/StrategyList/Strategy_strat_chill_wave")
-	_expect_node(screen, "Layout/StrategyList/Strategy_strat_counter_demon_summon")
+	_expect_node(screen, "ScrollContainer/Layout/StrategyList")
+	_expect_node(screen, "ScrollContainer/Layout/StrategyList/Strategy_strat_void_echo")
+	_expect_node(screen, "ScrollContainer/Layout/StrategyList/Strategy_strat_chill_wave")
+	_expect_node(screen, "ScrollContainer/Layout/StrategyList/Strategy_strat_counter_demon_summon")
 
 	if _failures.is_empty():
-		var strategy_void := screen.get_node("Layout/StrategyList/Strategy_strat_void_echo") as CheckBox
-		var strategy_chill := screen.get_node("Layout/StrategyList/Strategy_strat_chill_wave") as CheckBox
+		var strategy_void := screen.get_node("ScrollContainer/Layout/StrategyList/Strategy_strat_void_echo") as CheckBox
+		var strategy_chill := screen.get_node("ScrollContainer/Layout/StrategyList/Strategy_strat_chill_wave") as CheckBox
 		if strategy_void == null:
 			_failures.append("expected strat_void_echo checkbox")
 		if strategy_chill == null:
 			_failures.append("expected strat_chill_wave checkbox")
 		if _failures.is_empty():
-			for child in (screen.get_node("Layout/StrategyList") as VBoxContainer).get_children():
+			for child in (screen.get_node("ScrollContainer/Layout/StrategyList") as VBoxContainer).get_children():
 				var checkbox := child as CheckBox
 				if checkbox != null:
 					checkbox.button_pressed = false
@@ -44,7 +44,7 @@ func _run() -> void:
 			})
 			if setup.has("invalid_reason"):
 				_failures.append("expected valid setup for multi strategies")
-			var budget_label := screen.get_node("Layout/BudgetLabel") as Label
+			var budget_label := screen.get_node("ScrollContainer/Layout/BudgetLabel") as Label
 			if budget_label == null:
 				_failures.append("expected budget label")
 			elif budget_label.text != "预算: 4 / 16":

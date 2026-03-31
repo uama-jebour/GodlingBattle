@@ -23,13 +23,22 @@ func _run() -> void:
 		"battle_id": "battle_void_gate_alpha",
 		"seed": 1
 	}
-	session_state.last_timeline = [{
-		"tick": 0,
-		"entities": [
-			{"entity_id": "hero_angel_0", "display_name": "英雄：天使", "side": "hero", "alive": true, "hp": 80.0, "max_hp": 100.0, "position": Vector2(200, 200)},
-			{"entity_id": "enemy_hunter_fiend_4", "display_name": "追猎魔", "side": "enemy", "alive": true, "hp": 30.0, "max_hp": 30.0, "position": Vector2(600, 240)}
-		]
-	}]
+	session_state.last_timeline = [
+		{
+			"tick": 0,
+			"entities": [
+				{"entity_id": "hero_angel_0", "display_name": "英雄：天使", "side": "hero", "alive": true, "hp": 80.0, "max_hp": 100.0, "position": Vector2(200, 200)},
+				{"entity_id": "enemy_hunter_fiend_4", "display_name": "追猎魔", "side": "enemy", "alive": true, "hp": 30.0, "max_hp": 30.0, "position": Vector2(600, 240)}
+			]
+		},
+		{
+			"tick": 150,
+			"entities": [
+				{"entity_id": "hero_angel_0", "display_name": "英雄：天使", "side": "hero", "alive": true, "hp": 80.0, "max_hp": 100.0, "position": Vector2(200, 200)},
+				{"entity_id": "enemy_hunter_fiend_4", "display_name": "追猎魔", "side": "enemy", "alive": false, "hp": 0.0, "max_hp": 30.0, "position": Vector2(600, 240)}
+			]
+		}
+	]
 	session_state.last_battle_result = {
 		"log_entries": [
 			{"tick": 0, "type": "event_warning", "event_id": "evt_hunter_fiend_arrival"},
@@ -57,6 +66,8 @@ func _run() -> void:
 		var log_text := String(screen.call("get_battle_log_text"))
 		if log_text.find("关键事件") == -1:
 			_failures.append("log should include key-event section")
+		if log_text.find("阶段汇总") == -1:
+			_failures.append("log should include phase-summary section")
 		if log_text.find("普通日志") == -1:
 			_failures.append("log should include regular-log section")
 		if log_text.find("5秒后") == -1:

@@ -33,7 +33,7 @@ func _check_preparation_screen() -> void:
 	root.add_child(prep)
 	await process_frame
 
-	var title := prep.get_node_or_null("Layout/TitleLabel") as Label
+	var title := prep.get_node_or_null("ScrollContainer/Layout/TitleLabel") as Label
 	if title == null:
 		_failures.append("missing prep title label")
 	else:
@@ -41,7 +41,7 @@ func _check_preparation_screen() -> void:
 		if title_size < 48:
 			_failures.append("prep title font should be >= 48")
 
-	var selection_summary := prep.get_node_or_null("Layout/SelectionSummary") as Label
+	var selection_summary := prep.get_node_or_null("ScrollContainer/Layout/SelectionSummary") as Label
 	if selection_summary == null:
 		_failures.append("missing prep selection summary")
 	else:
@@ -49,7 +49,7 @@ func _check_preparation_screen() -> void:
 		if summary_text.find("hero_angel") != -1 or summary_text.find("strat_") != -1 or summary_text.find("battle_void_") != -1:
 			_failures.append("prep summary should not expose english ids")
 
-	var hero_select := prep.get_node_or_null("Layout/HeroSelect") as OptionButton
+	var hero_select := prep.get_node_or_null("ScrollContainer/Layout/HeroSelect") as OptionButton
 	if hero_select == null:
 		_failures.append("missing hero select")
 	else:
@@ -62,7 +62,7 @@ func _check_preparation_screen() -> void:
 		if hero_popup == null or int(hero_popup.get_theme_font_size("font_size")) < 36:
 			_failures.append("hero popup menu font should be >= 36")
 
-	var battle_select := prep.get_node_or_null("Layout/BattleSelect") as OptionButton
+	var battle_select := prep.get_node_or_null("ScrollContainer/Layout/BattleSelect") as OptionButton
 	if battle_select == null:
 		_failures.append("missing battle select")
 	else:
@@ -72,11 +72,11 @@ func _check_preparation_screen() -> void:
 		if battle_select.custom_minimum_size.y < 88.0:
 			_failures.append("battle select height should be >= 88")
 
-	var seed_input := prep.get_node_or_null("Layout/SeedInput")
+	var seed_input := prep.get_node_or_null("ScrollContainer/Layout/SeedInput")
 	if seed_input != null:
 		_failures.append("seed input should be removed from preparation layout")
 
-	var strategy_checkbox := prep.get_node_or_null("Layout/StrategyList/Strategy_strat_void_echo") as CheckBox
+	var strategy_checkbox := prep.get_node_or_null("ScrollContainer/Layout/StrategyList/Strategy_strat_void_echo") as CheckBox
 	if strategy_checkbox == null:
 		_failures.append("missing strategy checkbox")
 	else:
@@ -88,7 +88,7 @@ func _check_preparation_screen() -> void:
 		if checked_icon == null or checked_icon.get_width() < 30:
 			_failures.append("strategy checkbox checked icon should be >= 30px")
 
-	var start_button := prep.get_node_or_null("Layout/StartBattleButton") as Button
+	var start_button := prep.get_node_or_null("ScrollContainer/Layout/StartBattleButton") as Button
 	if start_button == null:
 		_failures.append("missing start battle button")
 	else:

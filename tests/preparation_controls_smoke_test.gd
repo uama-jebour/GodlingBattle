@@ -14,13 +14,13 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 
-	_expect_node(screen, "Layout/HeroSelect")
-	_expect_node(screen, "Layout/BattleSelect")
-	_expect_node(screen, "Layout/AllyCountSelect")
-	_expect_node(screen, "Layout/TestPresetSelect")
-	_expect_node(screen, "Layout/ApplyPresetButton")
-	_expect_node_absent(screen, "Layout/SeedInput")
-	_expect_node(screen, "Layout/StrategyList")
+	_expect_node(screen, "ScrollContainer/Layout/HeroSelect")
+	_expect_node(screen, "ScrollContainer/Layout/BattleSelect")
+	_expect_node(screen, "ScrollContainer/Layout/AllyCountSelect")
+	_expect_node(screen, "ScrollContainer/Layout/TestPresetSelect")
+	_expect_node(screen, "ScrollContainer/Layout/ApplyPresetButton")
+	_expect_node_absent(screen, "ScrollContainer/Layout/SeedInput")
+	_expect_node(screen, "ScrollContainer/Layout/StrategyList")
 
 	screen.queue_free()
 	await process_frame
