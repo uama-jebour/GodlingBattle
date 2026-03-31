@@ -38,6 +38,35 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
+## 本次改动（2026-03-31，Test Suite Step1 编排能力解锁，当前工作区）
+
+本轮先完成测试目标 1 的编排前置能力，聚焦“队伍编排、开场敌方编排、召唤落点编排”：
+
+- setup 支持可变 ally 数量（含 hero-only）：
+  - `preparation_screen.gd` 与 `battle_runner.gd` 从固定 `ally_ids.size()==3` 调整为区间校验（`0..8`）
+  - 新增测试：
+    - `tests/preparation_variable_ally_count_test.gd`
+    - `tests/runtime_variable_ally_count_test.gd`
+- 新增 3 敌开场基线关卡与 1.1/1.2 测试包：
+  - `battle_void_gate_test_baseline`（开场 3 敌）
+  - `pack_goal_1_1_baseline`（英雄 + 2 友军）
+  - `pack_goal_1_2_hero_only`（仅英雄 + 主动策略）
+  - `tests/runtime_three_enemy_opening_test.gd` 校验开场敌人数
+- 事件召唤支持配置落点锚位：
+  - `evt_hunter_fiend_arrival` 的 `unresolved_effect_def` 新增 `spawn_anchor` 与 `spawn_jitter`
+  - runtime 召唤落点支持 `right_flank/right_top/right_bottom`，未配置时回退动态锚位
+  - 新增测试：`tests/runtime_event_summon_spawn_anchor_test.gd`
+
+验证结果（当前工作区）：
+
+- `tests/preparation_variable_ally_count_test.gd` 通过
+- `tests/runtime_variable_ally_count_test.gd` 通过
+- `tests/runtime_three_enemy_opening_test.gd` 通过
+- `tests/runtime_event_summon_spawn_anchor_test.gd` 通过
+- `tests/runtime_event_unresolved_summon_spawn_test.gd` 通过
+- `tests/content_consistency_test.gd` 通过
+- `tests/observe_event_response_indicator_test.gd` 通过
+
 ## 本次改动（2026-03-31，Observe 高能可视化 + 事件召唤落地，当前工作区）
 
 本轮围绕“自动观战可读性、事件语义可视化、运行时一致性”完成以下增强：

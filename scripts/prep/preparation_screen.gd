@@ -3,6 +3,8 @@ extends Control
 const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 const DEFAULT_STRATEGY_BUDGET := 16
 const DEFAULT_ALLY_IDS := ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"]
+const MIN_ALLY_COUNT := 0
+const MAX_ALLY_COUNT := 8
 const DEFAULT_STRATEGY_SELECTED_COUNT := 4
 const STRATEGY_CHECK_ICON_SIZE := 40
 
@@ -201,7 +203,7 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 	if hero_id.is_empty() or content.get_unit(hero_id).is_empty():
 		content.free()
 		return {"invalid_reason": "missing_hero"}
-	if ally_ids.size() != 3:
+	if not _is_valid_ally_count(ally_ids):
 		content.free()
 		return {"invalid_reason": "invalid_ally_count"}
 	for ally_id in ally_ids:
@@ -230,6 +232,10 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 		"seed": int(selection.get("seed", 0)),
 		"randomized_spawn": bool(selection.get("randomized_spawn", false))
 	}
+
+
+func _is_valid_ally_count(ally_ids: Array) -> bool:
+	return ally_ids.size() >= MIN_ALLY_COUNT and ally_ids.size() <= MAX_ALLY_COUNT
 
 
 func start_battle(selection: Dictionary) -> void:

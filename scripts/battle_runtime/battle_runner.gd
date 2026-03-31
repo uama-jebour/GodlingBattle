@@ -5,6 +5,8 @@ const AI := preload("res://scripts/battle_runtime/battle_ai_system.gd")
 const COMBAT := preload("res://scripts/battle_runtime/battle_combat_system.gd")
 const EVENTS := preload("res://scripts/battle_runtime/battle_event_response_system.gd")
 const CONTENT := preload("res://autoload/battle_content.gd")
+const MIN_ALLY_COUNT := 0
+const MAX_ALLY_COUNT := 8
 
 var _state := STATE.new()
 var _ai := AI.new()
@@ -85,7 +87,7 @@ func _validate_setup(setup: Dictionary) -> String:
 		content.free()
 		return "missing_hero"
 	var ally_ids: Array = setup.get("ally_ids", [])
-	if ally_ids.size() != 3:
+	if ally_ids.size() < MIN_ALLY_COUNT or ally_ids.size() > MAX_ALLY_COUNT:
 		content.free()
 		return "invalid_ally_count"
 	for ally_id in ally_ids:

@@ -11,12 +11,14 @@ func _run() -> void:
 	var content: Node = load("res://autoload/battle_content.gd").new()
 	for pack in content.get_test_packs():
 		var battle_id := str(pack.get("battle_id", ""))
+		if not pack.has("ally_ids"):
+			_failures.append("pack missing ally_ids: %s" % str(pack.get("pack_id", "")))
 		if content.get_battle(battle_id).is_empty():
 			_failures.append("missing battle: %s" % battle_id)
 		for strategy_id in pack.get("strategy_ids", []):
 			if content.get_strategy(str(strategy_id)).is_empty():
 				_failures.append("missing strategy: %s" % strategy_id)
-	var battle_ids := ["battle_void_gate_alpha", "battle_void_gate_beta"]
+	var battle_ids := ["battle_void_gate_alpha", "battle_void_gate_beta", "battle_void_gate_test_baseline"]
 	for battle_id in battle_ids:
 		var battle: Dictionary = content.get_battle(battle_id)
 		if battle.is_empty():

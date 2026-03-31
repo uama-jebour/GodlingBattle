@@ -142,7 +142,13 @@ var _events := {
 		"warning_seconds": 5.0,
 		"response_tag": "恶魔召唤",
 		"response_level": 1,
-		"unresolved_effect_def": {"type": "summon", "unit_id": "enemy_hunter_fiend", "count": 1}
+		"unresolved_effect_def": {
+			"type": "summon",
+			"unit_id": "enemy_hunter_fiend",
+			"count": 1,
+			"spawn_anchor": "right_flank",
+			"spawn_jitter": {"x": 18.0, "y": 48.0}
+		}
 	}),
 	"evt_demon_ambush": TYPES.event({
 		"event_id": "evt_demon_ambush",
@@ -180,6 +186,14 @@ var _battles := {
 		"enemy_units": ["enemy_wandering_demon", "enemy_animated_machine"],
 		"event_ids": ["evt_demon_ambush", "evt_void_collapse"],
 		"seed": 20260330
+	}),
+	"battle_void_gate_test_baseline": TYPES.battle({
+		"battle_id": "battle_void_gate_test_baseline",
+		"display_name": "测试基线·初始编排",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_wandering_demon", "enemy_animated_machine", "enemy_wandering_demon"],
+		"event_ids": ["evt_hunter_fiend_arrival"],
+		"seed": 26033101
 	})
 }
 
@@ -251,6 +265,20 @@ func get_test_packs() -> Array:
 			"hero_id": "hero_angel",
 			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"],
 			"strategy_ids": ["strat_void_echo", "strat_chill_wave"]
+		},
+		{
+			"pack_id": "pack_goal_1_1_baseline",
+			"battle_id": "battle_void_gate_test_baseline",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": []
+		},
+		{
+			"pack_id": "pack_goal_1_2_hero_only",
+			"battle_id": "battle_void_gate_test_baseline",
+			"hero_id": "hero_angel",
+			"ally_ids": [],
+			"strategy_ids": ["strat_chill_wave"]
 		},
 		{
 			"pack_id": "pack_multi_event_beta",

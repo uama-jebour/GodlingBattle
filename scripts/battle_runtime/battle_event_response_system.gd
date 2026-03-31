@@ -163,7 +163,8 @@ func _apply_unresolved_summon(effect_def: Dictionary, state: Dictionary, tick_no
 
 	var entities: Array = state.get("entities", [])
 	for _i in range(count):
-		var entity := _build_summoned_enemy_entity(unit_id, unit_def, state, entities)
+		var spawn_position := _summoned_enemy_position(state, entities, effect_def)
+		var entity := _build_summoned_enemy_entity(unit_id, unit_def, state, entities, spawn_position)
 		entities.append(entity)
 		state["log_entries"].append({
 			"tick": tick_now,
@@ -175,7 +176,7 @@ func _apply_unresolved_summon(effect_def: Dictionary, state: Dictionary, tick_no
 	state["entities"] = entities
 
 
-func _build_summoned_enemy_entity(unit_id: String, unit_def: Dictionary, state: Dictionary, entities: Array) -> Dictionary:
+func _build_summoned_enemy_entity(unit_id: String, unit_def: Dictionary, state: Dictionary, entities: Array, spawn_position: Vector2) -> Dictionary:
 	var spawn_serial := _next_spawn_serial(state, unit_id)
 	var entity_id := _unique_summoned_entity_id(unit_id, spawn_serial, entities)
 	var hp := float(unit_def.get("max_hp", 30.0)) * ENEMY_HP_MULTIPLIER
@@ -197,7 +198,7 @@ func _build_summoned_enemy_entity(unit_id: String, unit_def: Dictionary, state: 
 		"attack_cooldown_ticks": 0,
 		"slow_ratio": 0.0,
 		"slow_ticks_remaining": 0,
-		"position": _summoned_enemy_position(state, entities)
+		"position": spawn_position
 	}
 
 
@@ -229,7 +230,27 @@ func _entity_id_exists(entity_id: String, entities: Array) -> bool:
 	return false
 
 
-func _summoned_enemy_position(state: Dictionary, entities: Array) -> Vector2:
+func _summoned_enemy_position(state: Dictionary, entities: Array, effect_def: Dictionary = {}) -> Vector2:
+	var anchor_name := str(effect_def.get("spawn_anchor", ""))
+	var anchor := _resolve_anchor_position(anchor_name)
+	if anchor == Vector2.ZERO:
+		anchor = _dynamic_enemy_anchor(entities)
+	var jitter_cfg: Dictionary = effect_def.get("spawn_jitter", {})
+	var jitter_x := float(jitter_cfg.get("x", 22.0))
+	var jitter_y := float(jitter_cfg.get("y", 68.0))
+	jitter_x = maxf(0.0, jitter_x)
+	jitter_y = maxf(0.0, jitter_y)
+	var rng := state.get("rng", null) as RandomNumberGenerator
+	var jitter := Vector2.ZERO
+	if rng != null:
+		jitter = Vector2(
+			rng.randf_range(-jitter_x, jitter_x),
+			rng.randf_range(-jitter_y, jitter_y)
+		)
+	return _clamp_to_arena(anchor + jitter)
+
+
+func _dynamic_enemy_anchor(entities: Array) -> Vector2:
 	var anchor := Vector2(700.0, 360.0)
 	var enemy_rows: Array[Dictionary] = []
 	for row in entities:
@@ -245,14 +266,19 @@ func _summoned_enemy_position(state: Dictionary, entities: Array) -> Vector2:
 			sum += _position_of(entity)
 		anchor = sum / float(enemy_rows.size())
 		anchor.x = maxf(anchor.x + 56.0, 620.0)
-	var rng := state.get("rng", null) as RandomNumberGenerator
-	var jitter := Vector2.ZERO
-	if rng != null:
-		jitter = Vector2(
-			rng.randf_range(-22.0, 22.0),
-			rng.randf_range(-68.0, 68.0)
-		)
-	return _clamp_to_arena(anchor + jitter)
+	return anchor
+
+
+func _resolve_anchor_position(anchor_name: String) -> Vector2:
+	match anchor_name:
+		"right_flank":
+			return Vector2(700.0, 360.0)
+		"right_top":
+			return Vector2(700.0, 250.0)
+		"right_bottom":
+			return Vector2(700.0, 520.0)
+		_:
+			return Vector2.ZERO
 
 
 func _position_of(entity: Dictionary) -> Vector2:
