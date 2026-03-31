@@ -60,7 +60,7 @@ theme_override_constants/separation = 8
 [node name="BattlefieldTitle" type="Label" parent="LayoutRoot/LeftColumn/BattlefieldPanel"]
 layout_mode = 2
 text = "战场视图"
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 
 [node name="BattlefieldHint" type="Label" parent="LayoutRoot/LeftColumn/BattlefieldPanel"]
 layout_mode = 2
@@ -78,7 +78,7 @@ theme_override_constants/separation = 8
 [node name="StrategyTitle" type="Label" parent="LayoutRoot/LeftColumn/StrategyPanel"]
 layout_mode = 2
 text = "战术策略"
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 
 [node name="StrategyHint" type="Label" parent="LayoutRoot/LeftColumn/StrategyPanel"]
 layout_mode = 2
@@ -102,7 +102,7 @@ theme_override_constants/separation = 8
 [node name="RosterTitle" type="Label" parent="LayoutRoot/RightColumn/AliveRosterPanel"]
 layout_mode = 2
 text = "存活名册"
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 
 [node name="RosterHint" type="Label" parent="LayoutRoot/RightColumn/AliveRosterPanel"]
 layout_mode = 2
@@ -119,7 +119,7 @@ theme_override_constants/separation = 8
 [node name="BattleLogTitle" type="Label" parent="LayoutRoot/RightColumn/BattleLogPanel"]
 layout_mode = 2
 text = "战斗日志"
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 
 [node name="BattleLogHint" type="Label" parent="LayoutRoot/RightColumn/BattleLogPanel"]
 layout_mode = 2

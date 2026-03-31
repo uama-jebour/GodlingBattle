@@ -31,10 +31,10 @@ func _run() -> void:
 	await process_frame
 
 	var targets := {
-		"LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldTitle": 15,
-		"LayoutRoot/LeftColumn/StrategyPanel/StrategyTitle": 15,
-		"LayoutRoot/RightColumn/AliveRosterPanel/RosterTitle": 15,
-		"LayoutRoot/RightColumn/BattleLogPanel/BattleLogTitle": 15
+		"LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldTitle": 24,
+		"LayoutRoot/LeftColumn/StrategyPanel/StrategyTitle": 24,
+		"LayoutRoot/RightColumn/AliveRosterPanel/RosterTitle": 24,
+		"LayoutRoot/RightColumn/BattleLogPanel/BattleLogTitle": 24
 	}
 	for path in targets.keys():
 		var label := screen.get_node_or_null(path) as Label
@@ -43,6 +43,21 @@ func _run() -> void:
 			continue
 		var minimum_size := int(targets[path])
 		var font_size := int(label.get_theme_font_size("font_size"))
+		if font_size < minimum_size:
+			_failures.append("%s font too small: %d" % [path, font_size])
+
+	var hud_targets := {
+		"LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot/TickLabel": 44,
+		"LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot/EventLabel": 30,
+		"LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot/StrategyCastLabel": 30
+	}
+	for path in hud_targets.keys():
+		var hud_label := screen.get_node_or_null(path) as Label
+		if hud_label == null:
+			_failures.append("missing hud label: %s" % path)
+			continue
+		var minimum_size := int(hud_targets[path])
+		var font_size := int(hud_label.get_theme_font_size("font_size"))
 		if font_size < minimum_size:
 			_failures.append("%s font too small: %d" % [path, font_size])
 
