@@ -23,6 +23,9 @@ const PRESET_A2_MIXED_ALLIES := "preset_a2_mixed_allies"
 const PRESET_A3_ACTIVE_CHILL := "preset_a3_active_chill"
 const PRESET_A3_ACTIVE_NUKE := "preset_a3_active_nuke"
 const PRESET_A3_ACTIVE_COMBO := "preset_a3_active_combo"
+const PRESET_A4_DIFFICULTY_TIER1 := "preset_a4_difficulty_tier1"
+const PRESET_A4_DIFFICULTY_TIER2 := "preset_a4_difficulty_tier2"
+const PRESET_A4_DIFFICULTY_TIER3 := "preset_a4_difficulty_tier3"
 const DEFAULT_ALLY_UNIT_ID := "ally_hound_remnant"
 
 var _current_selection: Dictionary = {
@@ -602,6 +605,9 @@ func _rebuild_test_preset_options() -> void:
 	_add_test_preset_option(12, "测试预设：A3 主动策略（寒潮）", PRESET_A3_ACTIVE_CHILL)
 	_add_test_preset_option(13, "测试预设：A3 主动策略（核击）", PRESET_A3_ACTIVE_NUKE)
 	_add_test_preset_option(14, "测试预设：A3 主动策略（双主动）", PRESET_A3_ACTIVE_COMBO)
+	_add_test_preset_option(15, "测试预设：A4 难度档（低战力）", PRESET_A4_DIFFICULTY_TIER1)
+	_add_test_preset_option(16, "测试预设：A4 难度档（中战力）", PRESET_A4_DIFFICULTY_TIER2)
+	_add_test_preset_option(17, "测试预设：A4 难度档（高战力）", PRESET_A4_DIFFICULTY_TIER3)
 
 
 func _add_test_preset_option(index: int, text: String, metadata: String) -> void:
@@ -729,6 +735,39 @@ func _apply_test_preset(preset_id: String) -> void:
 				"ally_entries": [],
 				"strategy_ids": ["strat_chill_wave", "strat_nuclear_strike"],
 				"battle_id": "battle_void_gate_alpha"
+			}
+		PRESET_A4_DIFFICULTY_TIER1:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": [],
+				"ally_entries": [
+					{"unit_id": "ally_hound_remnant", "count": 2}
+				],
+				"strategy_ids": ["strat_chill_wave"],
+				"battle_id": "battle_test_difficulty_tier1"
+			}
+		PRESET_A4_DIFFICULTY_TIER2:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": [],
+				"ally_entries": [
+					{"unit_id": "ally_hound_remnant", "count": 2},
+					{"unit_id": "ally_arc_shooter", "count": 1}
+				],
+				"strategy_ids": ["strat_chill_wave", "strat_counter_demon_summon"],
+				"battle_id": "battle_test_difficulty_tier2"
+			}
+		PRESET_A4_DIFFICULTY_TIER3:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": [],
+				"ally_entries": [
+					{"unit_id": "ally_hound_remnant", "count": 1},
+					{"unit_id": "ally_arc_shooter", "count": 1},
+					{"unit_id": "ally_guardian_sentinel", "count": 1}
+				],
+				"strategy_ids": ["strat_chill_wave", "strat_nuclear_strike", "strat_counter_demon_summon"],
+				"battle_id": "battle_test_difficulty_tier3"
 			}
 		_:
 			pass

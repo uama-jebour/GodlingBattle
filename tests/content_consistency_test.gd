@@ -42,7 +42,10 @@ func _run() -> void:
 		"battle_test_enemy_melee",
 		"battle_test_enemy_ranged",
 		"battle_test_enemy_mixed",
-		"battle_test_enemy_elite"
+		"battle_test_enemy_elite",
+		"battle_test_difficulty_tier1",
+		"battle_test_difficulty_tier2",
+		"battle_test_difficulty_tier3"
 	]
 	for battle_id in battle_ids:
 		var battle: Dictionary = content.get_battle(battle_id)

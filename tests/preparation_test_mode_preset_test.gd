@@ -77,6 +77,12 @@ func _run() -> void:
 			_failures.append("expected preset_a3_active_nuke")
 		if _find_metadata_index(preset_select, "preset_a3_active_combo") < 0:
 			_failures.append("expected preset_a3_active_combo")
+		if _find_metadata_index(preset_select, "preset_a4_difficulty_tier1") < 0:
+			_failures.append("expected preset_a4_difficulty_tier1")
+		if _find_metadata_index(preset_select, "preset_a4_difficulty_tier2") < 0:
+			_failures.append("expected preset_a4_difficulty_tier2")
+		if _find_metadata_index(preset_select, "preset_a4_difficulty_tier3") < 0:
+			_failures.append("expected preset_a4_difficulty_tier3")
 
 		var a1_index := _find_metadata_index(preset_select, "preset_a1_enemy_elite")
 		if a1_index >= 0:
@@ -120,6 +126,19 @@ func _run() -> void:
 				_failures.append("A3 combo preset should include chill+nuke strategies")
 			if str(a3_selection.get("battle_id", "")) != "battle_void_gate_alpha":
 				_failures.append("A3 combo preset should use battle_void_gate_alpha")
+
+		var a4_index := _find_metadata_index(preset_select, "preset_a4_difficulty_tier3")
+		if a4_index >= 0:
+			preset_select.select(a4_index)
+			preset_select.item_selected.emit(a4_index)
+			apply_preset_button.pressed.emit()
+			await process_frame
+			var a4_selection: Dictionary = screen.call("get_current_selection")
+			if str(a4_selection.get("battle_id", "")) != "battle_test_difficulty_tier3":
+				_failures.append("A4 tier3 preset should map to battle_test_difficulty_tier3")
+			var a4_strategies: Array = a4_selection.get("strategy_ids", [])
+			if not a4_strategies.has("strat_nuclear_strike"):
+				_failures.append("A4 tier3 preset should include strat_nuclear_strike")
 
 	screen.queue_free()
 	await process_frame

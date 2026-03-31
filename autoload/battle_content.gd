@@ -258,6 +258,30 @@ var _battles := {
 		"enemy_units": ["enemy_hunter_fiend", "enemy_wandering_demon", "enemy_animated_machine"],
 		"event_ids": [],
 		"seed": 26033114
+	}),
+	"battle_test_difficulty_tier1": TYPES.battle({
+		"battle_id": "battle_test_difficulty_tier1",
+		"display_name": "难度适配·低战力",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_wandering_demon", "enemy_animated_machine"],
+		"event_ids": [],
+		"seed": 26033121
+	}),
+	"battle_test_difficulty_tier2": TYPES.battle({
+		"battle_id": "battle_test_difficulty_tier2",
+		"display_name": "难度适配·中战力",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_wandering_demon", "enemy_animated_machine", "enemy_wandering_demon"],
+		"event_ids": ["evt_hunter_fiend_arrival"],
+		"seed": 26033122
+	}),
+	"battle_test_difficulty_tier3": TYPES.battle({
+		"battle_id": "battle_test_difficulty_tier3",
+		"display_name": "难度适配·高战力",
+		"battlefield_id": "field_void_gate",
+		"enemy_units": ["enemy_hunter_fiend", "enemy_wandering_demon", "enemy_animated_machine", "enemy_hunter_fiend"],
+		"event_ids": ["evt_hunter_fiend_arrival", "evt_demon_ambush"],
+		"seed": 26033123
 	})
 }
 
@@ -428,6 +452,36 @@ func get_test_packs() -> Array:
 			"hero_id": "hero_angel",
 			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
 			"strategy_ids": ["strat_chill_wave", "strat_nuclear_strike"]
+		},
+		{
+			"pack_id": "pack_a4_difficulty_tier1",
+			"battle_id": "battle_test_difficulty_tier1",
+			"hero_id": "hero_angel",
+			"ally_entries": [
+				{"unit_id": "ally_hound_remnant", "count": 2}
+			],
+			"strategy_ids": ["strat_chill_wave"]
+		},
+		{
+			"pack_id": "pack_a4_difficulty_tier2",
+			"battle_id": "battle_test_difficulty_tier2",
+			"hero_id": "hero_angel",
+			"ally_entries": [
+				{"unit_id": "ally_hound_remnant", "count": 2},
+				{"unit_id": "ally_arc_shooter", "count": 1}
+			],
+			"strategy_ids": ["strat_chill_wave", "strat_counter_demon_summon"]
+		},
+		{
+			"pack_id": "pack_a4_difficulty_tier3",
+			"battle_id": "battle_test_difficulty_tier3",
+			"hero_id": "hero_angel",
+			"ally_entries": [
+				{"unit_id": "ally_hound_remnant", "count": 1},
+				{"unit_id": "ally_arc_shooter", "count": 1},
+				{"unit_id": "ally_guardian_sentinel", "count": 1}
+			],
+			"strategy_ids": ["strat_chill_wave", "strat_nuclear_strike", "strat_counter_demon_summon"]
 		},
 		{
 			"pack_id": "pack_multi_event_beta",

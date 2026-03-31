@@ -38,6 +38,41 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
+## 本次改动（2026-03-31，Phase A4 三档难度配置，当前工作区）
+
+本轮启动并完成了 A4（1.8 关卡难度测试）首版：
+
+- 新增 A4 三档难度关卡：
+  - `battle_test_difficulty_tier1`（低战力）
+  - `battle_test_difficulty_tier2`（中战力）
+  - `battle_test_difficulty_tier3`（高战力）
+- 新增 A4 三档测试包：
+  - `pack_a4_difficulty_tier1`
+  - `pack_a4_difficulty_tier2`
+  - `pack_a4_difficulty_tier3`
+- 准备页新增 A4 三档预设：
+  - `A4 难度档（低战力）`
+  - `A4 难度档（中战力）`
+  - `A4 难度档（高战力）`
+- 新增测试：
+  - `tests/preparation_a4_difficulty_preset_test.gd`
+  - `tests/content_a4_difficulty_matrix_presence_test.gd`
+  - `tests/runtime_a4_difficulty_curve_test.gd`
+- 更新测试：
+  - `tests/preparation_test_mode_preset_test.gd`
+  - `tests/content_consistency_test.gd`
+- 新增文档：
+  - spec：`docs/superpowers/specs/2026-03-31-godlingbattle-phaseA4-difficulty-tier-design.md`
+  - plan：`docs/superpowers/plans/2026-03-31-godlingbattle-phaseA4-difficulty-tier.md`
+
+验证结果（当前工作区）：
+
+- `tests/preparation_a4_difficulty_preset_test.gd` 通过
+- `tests/content_a4_difficulty_matrix_presence_test.gd` 通过
+- `tests/runtime_a4_difficulty_curve_test.gd` 通过
+- `tests/preparation_test_mode_preset_test.gd` 通过
+- `tests/content_consistency_test.gd` 通过
+
 ## 本次改动（2026-03-31，Phase A3 主动策略测试链路，当前工作区）
 
 本轮启动并完成了 A3（主动策略测试链路）首段落地：
