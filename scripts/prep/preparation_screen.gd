@@ -20,6 +20,9 @@ const PRESET_A1_ENEMY_ELITE := "preset_a1_enemy_elite"
 const PRESET_A2_QUANTITY_ALLIES := "preset_a2_quantity_allies"
 const PRESET_A2_INDIVIDUAL_ALLIES := "preset_a2_individual_allies"
 const PRESET_A2_MIXED_ALLIES := "preset_a2_mixed_allies"
+const PRESET_A3_ACTIVE_CHILL := "preset_a3_active_chill"
+const PRESET_A3_ACTIVE_NUKE := "preset_a3_active_nuke"
+const PRESET_A3_ACTIVE_COMBO := "preset_a3_active_combo"
 const DEFAULT_ALLY_UNIT_ID := "ally_hound_remnant"
 
 var _current_selection: Dictionary = {
@@ -596,6 +599,9 @@ func _rebuild_test_preset_options() -> void:
 	_add_test_preset_option(9, "测试预设：A2 多友方（数量单位）", PRESET_A2_QUANTITY_ALLIES)
 	_add_test_preset_option(10, "测试预设：A2 多友方（个体友方）", PRESET_A2_INDIVIDUAL_ALLIES)
 	_add_test_preset_option(11, "测试预设：A2 多友方（远近混搭）", PRESET_A2_MIXED_ALLIES)
+	_add_test_preset_option(12, "测试预设：A3 主动策略（寒潮）", PRESET_A3_ACTIVE_CHILL)
+	_add_test_preset_option(13, "测试预设：A3 主动策略（核击）", PRESET_A3_ACTIVE_NUKE)
+	_add_test_preset_option(14, "测试预设：A3 主动策略（双主动）", PRESET_A3_ACTIVE_COMBO)
 
 
 func _add_test_preset_option(index: int, text: String, metadata: String) -> void:
@@ -698,6 +704,30 @@ func _apply_test_preset(preset_id: String) -> void:
 					{"unit_id": "ally_arc_shooter", "count": 1}
 				],
 				"strategy_ids": [],
+				"battle_id": "battle_void_gate_alpha"
+			}
+		PRESET_A3_ACTIVE_CHILL:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
+				"strategy_ids": ["strat_chill_wave"],
+				"battle_id": "battle_void_gate_alpha"
+			}
+		PRESET_A3_ACTIVE_NUKE:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
+				"strategy_ids": ["strat_nuclear_strike"],
+				"battle_id": "battle_void_gate_alpha"
+			}
+		PRESET_A3_ACTIVE_COMBO:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"ally_entries": [],
+				"strategy_ids": ["strat_chill_wave", "strat_nuclear_strike"],
 				"battle_id": "battle_void_gate_alpha"
 			}
 		_:

@@ -71,6 +71,12 @@ func _run() -> void:
 			_failures.append("expected preset_a2_individual_allies")
 		if _find_metadata_index(preset_select, "preset_a2_mixed_allies") < 0:
 			_failures.append("expected preset_a2_mixed_allies")
+		if _find_metadata_index(preset_select, "preset_a3_active_chill") < 0:
+			_failures.append("expected preset_a3_active_chill")
+		if _find_metadata_index(preset_select, "preset_a3_active_nuke") < 0:
+			_failures.append("expected preset_a3_active_nuke")
+		if _find_metadata_index(preset_select, "preset_a3_active_combo") < 0:
+			_failures.append("expected preset_a3_active_combo")
 
 		var a1_index := _find_metadata_index(preset_select, "preset_a1_enemy_elite")
 		if a1_index >= 0:
@@ -101,6 +107,19 @@ func _run() -> void:
 					_failures.append("A2 mixed preset second row should be ally_arc_shooter x1")
 			if str(a2_selection.get("battle_id", "")) != "battle_void_gate_alpha":
 				_failures.append("A2 mixed preset should use battle_void_gate_alpha")
+
+		var a3_index := _find_metadata_index(preset_select, "preset_a3_active_combo")
+		if a3_index >= 0:
+			preset_select.select(a3_index)
+			preset_select.item_selected.emit(a3_index)
+			apply_preset_button.pressed.emit()
+			await process_frame
+			var a3_selection: Dictionary = screen.call("get_current_selection")
+			var a3_strategies: Array = a3_selection.get("strategy_ids", [])
+			if not a3_strategies.has("strat_chill_wave") or not a3_strategies.has("strat_nuclear_strike"):
+				_failures.append("A3 combo preset should include chill+nuke strategies")
+			if str(a3_selection.get("battle_id", "")) != "battle_void_gate_alpha":
+				_failures.append("A3 combo preset should use battle_void_gate_alpha")
 
 	screen.queue_free()
 	await process_frame

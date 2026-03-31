@@ -409,6 +409,27 @@ func get_test_packs() -> Array:
 			"strategy_ids": []
 		},
 		{
+			"pack_id": "pack_a3_active_chill",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_chill_wave"]
+		},
+		{
+			"pack_id": "pack_a3_active_nuke",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_nuclear_strike"]
+		},
+		{
+			"pack_id": "pack_a3_active_combo",
+			"battle_id": "battle_void_gate_alpha",
+			"hero_id": "hero_angel",
+			"ally_ids": ["ally_hound_remnant", "ally_hound_remnant"],
+			"strategy_ids": ["strat_chill_wave", "strat_nuclear_strike"]
+		},
+		{
 			"pack_id": "pack_multi_event_beta",
 			"battle_id": "battle_void_gate_beta",
 			"hero_id": "hero_angel",

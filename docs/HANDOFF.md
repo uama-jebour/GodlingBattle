@@ -38,6 +38,45 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
+## 本次改动（2026-03-31，Phase A3 主动策略测试链路，当前工作区）
+
+本轮启动并完成了 A3（主动策略测试链路）首段落地：
+
+- 准备页新增 A3 主动策略测试预设：
+  - `A3 主动策略（寒潮）`
+  - `A3 主动策略（核击）`
+  - `A3 主动策略（双主动）`
+  - 对应 metadata：
+    - `preset_a3_active_chill`
+    - `preset_a3_active_nuke`
+    - `preset_a3_active_combo`
+- content 新增 A3 主动策略测试包：
+  - `pack_a3_active_chill`
+  - `pack_a3_active_nuke`
+  - `pack_a3_active_combo`
+- 新增 A3 测试：
+  - `tests/preparation_a3_active_preset_test.gd`
+  - `tests/content_a3_active_pack_presence_test.gd`
+  - `tests/runtime_active_strategy_effect_profile_test.gd`
+  - `tests/observe_active_strategy_vfx_integration_test.gd`
+- 更新测试：
+  - `tests/preparation_test_mode_preset_test.gd`（A3 预设可见与映射断言）
+- 补齐文档：
+  - spec：`docs/superpowers/specs/2026-03-31-godlingbattle-phaseA3-active-strategy-validation-design.md`
+  - plan：`docs/superpowers/plans/2026-03-31-godlingbattle-phaseA3-active-strategy-validation.md`
+
+验证结果（当前工作区）：
+
+- `tests/preparation_a3_active_preset_test.gd` 通过
+- `tests/content_a3_active_pack_presence_test.gd` 通过
+- `tests/runtime_active_strategy_effect_profile_test.gd` 通过
+- `tests/observe_active_strategy_vfx_integration_test.gd` 通过
+- `tests/preparation_test_mode_preset_test.gd` 通过
+- `tests/content_consistency_test.gd` 通过
+- 相关回归：
+  - `tests/runtime_active_strategy_trigger_test.gd` 通过
+  - `tests/observe_strategy_highlight_effect_test.gd` 通过
+
 ## 本次改动（2026-03-31，Phase A2 多友方 ally_entries，当前工作区）
 
 本轮完成了 A2（多友方编排）主链路：
