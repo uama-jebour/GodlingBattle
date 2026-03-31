@@ -1237,7 +1237,16 @@ func _refresh_battle_log_panel() -> void:
 
 
 func _build_battle_log_lines(limit: int = 18) -> Array[String]:
-	return _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
+	var key_lines := _battle_report_formatter.build_key_event_lines(_event_rows, _display_tick(), 8)
+	var normal_lines := _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
+	var lines: Array[String] = ["关键事件"]
+	for line in key_lines:
+		lines.append("- %s" % String(line))
+	lines.append("")
+	lines.append("普通日志")
+	for line in normal_lines:
+		lines.append("- %s" % String(line))
+	return lines
 
 
 func _display_tick() -> int:

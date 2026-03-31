@@ -50,6 +50,28 @@ func build_recent_detail(rows: Array, current_tick: int, filter_type: String = "
 	return lines
 
 
+func build_key_event_lines(rows: Array, current_tick: int, limit: int = 8) -> Array[String]:
+	var matched: Array[String] = []
+	for row in rows:
+		var tick := int(row.get("tick", -1))
+		if tick < 0 or tick > current_tick:
+			continue
+		var row_type := str(row.get("type", ""))
+		if row_type in ["hero_down", "ally_down", "enemy_down", "event_unresolved_effect"]:
+			matched.append(_build_detail_line(row, tick))
+			continue
+		if row_type == "event_resolve" and not bool(row.get("responded", false)):
+			matched.append(_build_detail_line(row, tick))
+	if matched.is_empty():
+		return ["暂无关键事件"]
+	var safe_limit := maxi(1, limit)
+	var start_index := maxi(0, matched.size() - safe_limit)
+	var lines: Array[String] = []
+	for index in range(start_index, matched.size()):
+		lines.append(matched[index])
+	return lines
+
+
 func _rows_for_tick(rows: Array, tick: int, filter_type: String) -> Array:
 	var filtered: Array = []
 	for row in rows:

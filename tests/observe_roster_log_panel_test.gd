@@ -55,6 +55,10 @@ func _run() -> void:
 		_failures.append("missing get_battle_log_text")
 	else:
 		var log_text := String(screen.call("get_battle_log_text"))
+		if log_text.find("关键事件") == -1:
+			_failures.append("log should include key-event section")
+		if log_text.find("普通日志") == -1:
+			_failures.append("log should include regular-log section")
 		if log_text.find("5秒后") == -1:
 			_failures.append("log should include warning countdown text")
 		if log_text.find("施放") == -1:
