@@ -38,6 +38,31 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
+## 本次改动（2026-03-31，准备页可见性与按钮辨识度优化，当前工作区）
+
+为提升准备页可用性，本轮完成了两项 UI 修正：
+
+- “应用测试预设”按钮视觉强化（与下拉框显著区分）：
+  - 使用高对比橙色系按钮样式（normal/hover/pressed/focus）
+  - 文案改为 `▶ 应用测试预设`，突出“可点击动作”
+  - 保持现有功能逻辑不变
+- 准备页初始可见性优化（避免“开始出战”首屏不可见）：
+  - 提高项目默认窗口高度：`viewport_height 1440 -> 1600`
+  - 提高准备页根节点最小高度并收紧中段布局占用
+  - 策略区改为固定较高最小高度，降低挤压导致的按钮下沉
+
+涉及文件：
+
+- `scripts/prep/preparation_screen.gd`
+- `scenes/prep/preparation_screen.tscn`
+- `project.godot`
+
+验证结果（当前工作区）：
+
+- `tests/preparation_test_mode_preset_test.gd` 通过
+- `tests/preparation_start_battle_ui_test.gd` 通过
+- `tests/preparation_controls_smoke_test.gd` 通过
+
 ## 本次改动（2026-03-31，Phase A4 三档难度配置，当前工作区）
 
 本轮启动并完成了 A4（1.8 关卡难度测试）首版：
