@@ -38,6 +38,39 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
+## 本次改动（2026-03-31，Phase A1 多敌人关卡矩阵，当前工作区）
+
+本轮完成了 A1（多敌人关卡矩阵）：
+
+- 新增 4 类敌方测试关卡：
+  - `battle_test_enemy_melee`（全近战）
+  - `battle_test_enemy_ranged`（全远程）
+  - `battle_test_enemy_mixed`（近远混合）
+  - `battle_test_enemy_elite`（精英主导）
+- 准备页测试预设新增 A1 四个入口并可一键应用：
+  - `A1 多敌人（全近战）`
+  - `A1 多敌人（全远程）`
+  - `A1 多敌人（近远混合）`
+  - `A1 多敌人（精英主导）`
+- 新增 runtime 组成测试：
+  - `tests/runtime_enemy_matrix_melee_test.gd`
+  - `tests/runtime_enemy_matrix_ranged_test.gd`
+  - `tests/runtime_enemy_matrix_mixed_test.gd`
+  - `tests/runtime_enemy_matrix_elite_test.gd`
+- content 一致性与预设测试同步扩展：
+  - `tests/content_consistency_test.gd`
+  - `tests/preparation_test_mode_preset_test.gd`
+
+验证结果（当前工作区）：
+
+- `tests/runtime_enemy_matrix_melee_test.gd` 通过
+- `tests/runtime_enemy_matrix_ranged_test.gd` 通过
+- `tests/runtime_enemy_matrix_mixed_test.gd` 通过
+- `tests/runtime_enemy_matrix_elite_test.gd` 通过
+- `tests/preparation_test_mode_preset_test.gd` 通过
+- `tests/content_consistency_test.gd` 通过
+- `tests/runtime_event_unresolved_summon_spawn_test.gd` 通过
+
 ## 本次改动（2026-03-31，Test Suite Step1 编排能力解锁，当前工作区）
 
 本轮先完成测试目标 1 的编排前置能力，聚焦“队伍编排、开场敌方编排、召唤落点编排”：

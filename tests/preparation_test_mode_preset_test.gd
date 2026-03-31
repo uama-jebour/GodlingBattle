@@ -57,6 +57,25 @@ func _run() -> void:
 				if not (current_selection.get("strategy_ids", []) as Array).has("strat_chill_wave"):
 					_failures.append("hero-only preset should include strat_chill_wave")
 
+		if _find_metadata_index(preset_select, "preset_a1_enemy_melee") < 0:
+			_failures.append("expected preset_a1_enemy_melee")
+		if _find_metadata_index(preset_select, "preset_a1_enemy_ranged") < 0:
+			_failures.append("expected preset_a1_enemy_ranged")
+		if _find_metadata_index(preset_select, "preset_a1_enemy_mixed") < 0:
+			_failures.append("expected preset_a1_enemy_mixed")
+		if _find_metadata_index(preset_select, "preset_a1_enemy_elite") < 0:
+			_failures.append("expected preset_a1_enemy_elite")
+
+		var a1_index := _find_metadata_index(preset_select, "preset_a1_enemy_elite")
+		if a1_index >= 0:
+			preset_select.select(a1_index)
+			preset_select.item_selected.emit(a1_index)
+			apply_preset_button.pressed.emit()
+			await process_frame
+			var a1_selection: Dictionary = screen.call("get_current_selection")
+			if str(a1_selection.get("battle_id", "")) != "battle_test_enemy_elite":
+				_failures.append("A1 elite preset should map to battle_test_enemy_elite")
+
 	screen.queue_free()
 	await process_frame
 	_finish()
