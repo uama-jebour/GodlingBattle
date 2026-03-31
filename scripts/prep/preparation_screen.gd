@@ -13,6 +13,10 @@ const PRESET_1_1_BASELINE := "preset_1_1_baseline"
 const PRESET_1_2_HERO_ONLY_ACTIVE := "preset_1_2_hero_only_active"
 const PRESET_1_3_EVENT_NO_COUNTER := "preset_1_3_event_no_counter"
 const PRESET_1_3_EVENT_WITH_COUNTER := "preset_1_3_event_with_counter"
+const PRESET_A1_ENEMY_MELEE := "preset_a1_enemy_melee"
+const PRESET_A1_ENEMY_RANGED := "preset_a1_enemy_ranged"
+const PRESET_A1_ENEMY_MIXED := "preset_a1_enemy_mixed"
+const PRESET_A1_ENEMY_ELITE := "preset_a1_enemy_elite"
 const DEFAULT_ALLY_UNIT_ID := "ally_hound_remnant"
 
 var _current_selection: Dictionary = {
@@ -531,6 +535,10 @@ func _rebuild_test_preset_options() -> void:
 	_add_test_preset_option(2, "测试预设：1.2 英雄孤立", PRESET_1_2_HERO_ONLY_ACTIVE)
 	_add_test_preset_option(3, "测试预设：1.3 反应（无反制）", PRESET_1_3_EVENT_NO_COUNTER)
 	_add_test_preset_option(4, "测试预设：1.3 反应（有反制）", PRESET_1_3_EVENT_WITH_COUNTER)
+	_add_test_preset_option(5, "测试预设：A1 多敌人（全近战）", PRESET_A1_ENEMY_MELEE)
+	_add_test_preset_option(6, "测试预设：A1 多敌人（全远程）", PRESET_A1_ENEMY_RANGED)
+	_add_test_preset_option(7, "测试预设：A1 多敌人（近远混合）", PRESET_A1_ENEMY_MIXED)
+	_add_test_preset_option(8, "测试预设：A1 多敌人（精英主导）", PRESET_A1_ENEMY_ELITE)
 
 
 func _add_test_preset_option(index: int, text: String, metadata: String) -> void:
@@ -567,6 +575,34 @@ func _apply_test_preset(preset_id: String) -> void:
 				"ally_ids": _ally_ids_for_count(2),
 				"strategy_ids": ["strat_counter_demon_summon"],
 				"battle_id": "battle_void_gate_alpha"
+			}
+		PRESET_A1_ENEMY_MELEE:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"strategy_ids": [],
+				"battle_id": "battle_test_enemy_melee"
+			}
+		PRESET_A1_ENEMY_RANGED:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"strategy_ids": [],
+				"battle_id": "battle_test_enemy_ranged"
+			}
+		PRESET_A1_ENEMY_MIXED:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"strategy_ids": [],
+				"battle_id": "battle_test_enemy_mixed"
+			}
+		PRESET_A1_ENEMY_ELITE:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"strategy_ids": [],
+				"battle_id": "battle_test_enemy_elite"
 			}
 		_:
 			pass
