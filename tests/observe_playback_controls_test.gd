@@ -53,8 +53,8 @@ func _run() -> void:
 	screen._process(1.0)
 	assert(int(screen._frame_index) == frame_before_pause)
 
-	speed_select.select(1)
-	speed_select.emit_signal("item_selected", 1)
+	speed_select.select(2)
+	speed_select.emit_signal("item_selected", 2)
 	pause_button.emit_signal("pressed")
 	var frame_before_resume := int(screen._frame_index)
 	screen._process(0.03)

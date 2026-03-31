@@ -41,8 +41,11 @@ func _run() -> void:
 	else:
 		if absf(float(token.hp_ratio) - 0.8) > 0.001:
 			_failures.append("expected hp_ratio=0.8")
-		if token.position != Vector2(120, 220):
-			_failures.append("expected token position updated")
+		var expected_position := Vector2.ZERO
+		if not snapshot.is_empty():
+			expected_position = (snapshot[0] as Dictionary).get("position", Vector2.ZERO)
+		if token.position != expected_position:
+			_failures.append("expected token position updated from snapshot")
 
 	_finish(screen)
 

@@ -15,6 +15,7 @@ func _run() -> void:
 	_assert_equal(resolver.unit_name_from_unit_id("hero_angel"), "英雄：天使", "hero unit id should resolve localized display name")
 
 	var enemy_name := resolver.unit_name_from_entity_id("enemy_wandering_demon_4")
+	_assert_equal(enemy_name, "游荡魔", "known enemy entity id should resolve concrete localized display name")
 	_assert_true(enemy_name.find("enemy_") == -1, "enemy entity id should not expose english prefix")
 
 	_assert_equal(resolver.strategy_name("strat_chill_wave"), "寒潮冲击", "strategy id should resolve localized name")

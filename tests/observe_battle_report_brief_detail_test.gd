@@ -22,8 +22,16 @@ func _verify_formatter_output() -> void:
 		return
 	var formatter: RefCounted = formatter_script.new()
 	var rows := [
+		{"tick": 8, "type": "strategy_cast", "strategy_id": "strat_void_echo", "cast_mode": "passive"},
 		{"tick": 8, "type": "strategy_cast", "strategy_id": "strat_chill_wave"},
-		{"tick": 8, "type": "event_warning", "event_id": "evt_hunter_fiend_arrival"},
+		{
+			"tick": 8,
+			"type": "event_warning",
+			"event_id": "evt_hunter_fiend_arrival",
+			"response_ready": false,
+			"response_strategy_id": "",
+			"response_missing_reason": "未携带对应对策"
+		},
 		{"tick": 8, "type": "event_resolve", "event_id": "evt_hunter_fiend_arrival", "responded": true},
 		{"tick": 8, "type": "event_unresolved_effect", "event_id": "evt_hunter_fiend_arrival"},
 		{"tick": 8, "type": "ally_down", "entity_id": "ally_hound_remnant_1"},
@@ -36,6 +44,8 @@ func _verify_formatter_output() -> void:
 		_failures.append("brief text should include tick")
 	if brief_text.find("寒潮冲击") == -1:
 		_failures.append("brief text should include localized strategy name")
+	if brief_text.find("被动生效") == -1:
+		_failures.append("brief text should include passive cast mode")
 	if brief_text.find("追猎魔登场") == -1:
 		_failures.append("brief text should include localized event name")
 	if brief_text.find("野犬残形") == -1:
@@ -44,14 +54,18 @@ func _verify_formatter_output() -> void:
 		_failures.append("brief text should not expose english ids")
 
 	var detail_lines: Array = formatter.call("build_tick_detail", rows, 8, "all")
-	if detail_lines.size() < 7:
+	if detail_lines.size() < 8:
 		_failures.append("detail lines should include all supported log types")
 	else:
 		var detail_text := "\n".join(PackedStringArray(detail_lines))
+		if detail_text.find("第8帧释放战技：虚无回响（被动生效）") == -1:
+			_failures.append("detail lines should describe passive strategy_cast")
 		if detail_text.find("第8帧释放战技：寒潮冲击") == -1:
 			_failures.append("detail lines should describe strategy_cast")
 		if detail_text.find("第8帧收到事件预警：追猎魔登场") == -1:
 			_failures.append("detail lines should describe event_warning")
+		if detail_text.find("不可响应：未携带对应对策") == -1:
+			_failures.append("detail lines should include warning response reason")
 		if detail_text.find("第8帧结算事件：追猎魔登场（已响应）") == -1:
 			_failures.append("detail lines should describe event_resolve with responded state")
 		if detail_text.find("第8帧承受未响应后果：追猎魔登场") == -1:
@@ -60,7 +74,7 @@ func _verify_formatter_output() -> void:
 			_failures.append("detail lines should describe ally_down")
 		if detail_text.find("第8帧英雄倒下：英雄：天使") == -1:
 			_failures.append("detail lines should describe hero_down")
-		if detail_text.find("第8帧敌方倒下：未知敌方单位") == -1:
+		if detail_text.find("第8帧敌方倒下：游荡魔") == -1:
 			_failures.append("detail lines should describe enemy_down")
 		if detail_text.find("strat_") != -1 or detail_text.find("evt_") != -1 or detail_text.find("enemy_") != -1:
 			_failures.append("detail lines should not expose english ids")
@@ -117,6 +131,7 @@ func _verify_observe_detail_toggle() -> void:
 	var screen: Control = OBSERVE_SCENE.instantiate()
 	root.add_child(screen)
 	await process_frame
+	screen.set_process(false)
 
 	if not screen.has_method("get_detail_log_visible"):
 		_failures.append("missing get_detail_log_visible")

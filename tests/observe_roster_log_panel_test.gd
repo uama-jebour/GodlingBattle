@@ -65,6 +65,8 @@ func _run() -> void:
 			_failures.append("log should include strategy cast text")
 		if log_text.find("倒下") == -1:
 			_failures.append("log should include death text")
+		if log_text.find("▌") == -1:
+			_failures.append("log should include colored-bar prefix marker glyph")
 
 	screen.queue_free()
 	await process_frame

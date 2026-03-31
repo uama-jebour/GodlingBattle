@@ -25,6 +25,7 @@ BattleContent="*res://autoload/battle_content.gd"
 
 window/size/viewport_width=2560
 window/size/viewport_height=1440
+window/dpi/allow_hidpi=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

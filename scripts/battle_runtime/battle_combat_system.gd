@@ -11,7 +11,6 @@ func tick(state: Dictionary) -> void:
 		return
 
 	var tick_now := int(state.get("elapsed_ticks", 0))
-	_apply_ally_attrition(state, entities, tick_now)
 	_tick_status_effects(entities)
 	_process_active_strategies(state, entities, tick_now)
 	_process_attacks(state, entities, tick_now)
@@ -41,9 +40,26 @@ func _process_active_strategies(state: Dictionary, entities: Array, tick_now: in
 		if strategy_id.is_empty():
 			continue
 		var trigger_def: Dictionary = strategy_def.get("trigger_def", {})
-		if str(trigger_def.get("type", "")) != "cooldown":
-			continue
 		var row: Dictionary = runtime.get(strategy_id, {"cooldown_ticks_remaining": 0})
+		var trigger_type := str(trigger_def.get("type", ""))
+		if trigger_type == "always_on":
+			var activated := bool(row.get("always_on_activated", false))
+			if not activated:
+				state["triggered_strategies"].append({
+					"strategy_id": strategy_id,
+					"tick": tick_now
+				})
+				state["log_entries"].append({
+					"tick": tick_now,
+					"type": "strategy_cast",
+					"strategy_id": strategy_id,
+					"cast_mode": "passive"
+				})
+				row["always_on_activated"] = true
+			runtime[strategy_id] = row
+			continue
+		if trigger_type != "cooldown":
+			continue
 		var cooldown_ticks_remaining: int = int(row.get("cooldown_ticks_remaining", 0))
 		if cooldown_ticks_remaining > 0:
 			row["cooldown_ticks_remaining"] = cooldown_ticks_remaining - 1
@@ -72,7 +88,10 @@ func _ensure_strategy_runtime(state: Dictionary, strategies: Array) -> Dictionar
 			continue
 		if runtime.has(strategy_id):
 			continue
-		runtime[strategy_id] = {"cooldown_ticks_remaining": 0}
+		runtime[strategy_id] = {
+			"cooldown_ticks_remaining": 0,
+			"always_on_activated": false
+		}
 	state["strategy_runtime"] = runtime
 	return runtime
 
@@ -271,24 +290,6 @@ func _record_unit_down_log(state: Dictionary, entity: Dictionary, tick_now: int)
 		"entity_id": str(entity.get("entity_id", ""))
 	})
 
-
-func _apply_ally_attrition(state: Dictionary, entities: Array, tick_now: int) -> void:
-	if tick_now <= 0:
-		return
-	for entity in entities:
-		if str(entity.get("side", "")) != "ally" or not bool(entity.get("alive", false)):
-			continue
-		var next_hp := maxf(0.0, float(entity.get("hp", 0.0)) - 1.0)
-		entity["hp"] = next_hp
-		if next_hp <= 0.0:
-			entity["alive"] = false
-			_record_casualty(state, entity)
-			state["log_entries"].append({
-				"tick": tick_now,
-				"type": "ally_down",
-				"entity_id": str(entity.get("entity_id", ""))
-			})
-		break
 
 func _record_casualty(state: Dictionary, entity: Dictionary) -> void:
 	var entity_id := str(entity.get("entity_id", ""))

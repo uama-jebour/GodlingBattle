@@ -38,6 +38,42 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
+## 本次改动（2026-03-31，Observe 高能可视化 + 事件召唤落地，当前工作区）
+
+本轮围绕“自动观战可读性、事件语义可视化、运行时一致性”完成以下增强：
+
+- Observe 战术高亮升级（高能版）：
+  - 战技卡高亮增强、目标高亮增强、起点脉冲增强
+  - 新增“策略名弹出字效（短暂放大+淡出）”与“全屏轻微色调闪光”
+  - 相关文件：
+    - `scripts/observe/strategy_card_view.gd`
+    - `scripts/observe/token_view.gd`
+    - `scripts/observe/combat_line_overlay.gd`
+    - `scripts/observe/observe_screen.gd`
+- 事件响应可视化规则增强：
+  - `event_resolve.responded=true` 时新增战场“X形封印 + 小范围波纹”提示
+  - 延长提示时长并提高亮度/尺寸，降低观战漏看概率
+  - 右侧日志区新增固定图例：
+    - `绿色封印=已拦截`
+    - `红色后果=未响应入场`
+- runtime 事件后果落地修复：
+  - 修复“未响应仅写日志、不真实召唤”的问题
+  - 对 `unresolved_effect_def.type=summon` 落地生成敌方实体并进入 timeline
+  - 相关文件：
+    - `scripts/battle_runtime/battle_event_response_system.gd`
+- 准备界面策略默认值：
+  - 默认勾选策略改为 4 个（用于快速体验多策略观战）
+  - 相关文件：
+    - `scripts/prep/preparation_screen.gd`
+
+新增/更新测试（节选）：
+
+- `tests/observe_strategy_highlight_effect_test.gd`
+- `tests/observe_event_response_indicator_test.gd`
+- `tests/observe_event_legend_hint_test.gd`
+- `tests/runtime_event_unresolved_summon_spawn_test.gd`
+- `tests/preparation_default_strategy_selection_test.gd`
+
 ## 本次改动（2026-03-31，Phase15 Observe 可读性增强首轮，当前工作区）
 
 本次完成了 Phase15 首轮可读性增强：
@@ -64,6 +100,24 @@
 
 - Observe 回归：`tests/observe_*.gd` 共 23 项，`23/23` 通过
 - 全量测试：`tests/*.gd` 共 68 项，`68/68` 通过
+
+## 本次改动（2026-03-31，Adaptive AI Movement，当前工作区）
+
+- 新增评分驱动自适应行动：接敌/避敌/突围/侧移（`battle_ai_system.gd`）
+- 增加 runtime 无瞬移与边界硬约束（限速、限加速度、每 tick 最大位移、战场边界 clamp）
+- 增加 observe 显示层位置插值平滑（`token_view.gd`，仅视觉层）
+- 新增测试：
+  - `tests/runtime_ai_no_teleport_test.gd`
+  - `tests/runtime_ai_boundary_clamp_test.gd`
+  - `tests/runtime_ai_engage_reachability_test.gd`
+  - `tests/runtime_ai_breakout_response_test.gd`
+  - `tests/observe_motion_smoothing_visual_test.gd`
+- 关键回归通过：
+  - `tests/runtime_determinism_test.gd`
+  - `tests/runtime_engagement_pacing_test.gd`
+  - `tests/runtime_parallel_attack_same_tick_test.gd`
+  - `tests/observe_token_render_test.gd`
+  - `tests/observe_battlefield_playable_area_test.gd`
 
 ## 本次改动（2026-03-31，Phase14 Task1-Task5，当前工作区）
 

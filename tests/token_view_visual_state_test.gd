@@ -29,6 +29,12 @@ func _run() -> void:
 	var side_color: Color = token.get_side_color()
 	if side_color == Color.WHITE:
 		_failures.append("side color should not be default white")
+	if not token.has_method("get_title_bar_color"):
+		_failures.append("missing get_title_bar_color")
+	else:
+		var title_bar_color: Color = token.call("get_title_bar_color")
+		if title_bar_color == token.get_fill_color():
+			_failures.append("title bar color should contrast with fill color")
 
 	_finish(token)
 

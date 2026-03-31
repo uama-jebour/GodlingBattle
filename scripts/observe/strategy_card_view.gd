@@ -4,12 +4,16 @@ const CARD_COLOR_READY := Color(0.113725, 0.164706, 0.196078, 0.94)
 const CARD_COLOR_TRIGGERED := Color(0.196078, 0.27451, 0.176471, 0.98)
 const STATE_COLOR_READY := Color(0.78, 0.86, 0.94, 1.0)
 const STATE_COLOR_TRIGGERED := Color(0.98, 0.93, 0.66, 1.0)
+const CARD_HIGHLIGHT_COLOR := Color(0.97, 0.93, 0.65, 1.0)
+const CARD_FLASH_COLOR := Color(1.0, 0.98, 0.88, 1.0)
+const HIGHLIGHT_SCALE_BOOST := 0.10
 
 var strategy_name := "未知战技"
 var cooldown_ratio := 0.0
 var cooldown_remaining_seconds := 0.0
 var cooldown_total_seconds := 0.0
 var is_triggered := false
+var highlight_alpha := 0.0
 
 @onready var _card_bg: ColorRect = get_node_or_null("CardBg") as ColorRect
 @onready var _name_label: Label = get_node_or_null("NameLabel") as Label
@@ -28,6 +32,7 @@ func apply_state(state: Dictionary) -> void:
 	cooldown_remaining_seconds = maxf(0.0, float(state.get("cooldown_remaining_seconds", 0.0)))
 	cooldown_total_seconds = maxf(0.0, float(state.get("cooldown_total_seconds", 0.0)))
 	is_triggered = bool(state.get("triggered", false))
+	highlight_alpha = clampf(float(state.get("highlight_alpha", 0.0)), 0.0, 1.0)
 	_sync_view()
 
 
@@ -46,7 +51,16 @@ func _sync_view() -> void:
 		_cooldown_fill.offset_bottom = 0.0
 		_cooldown_fill.visible = cooldown_ratio > 0.0
 	if _card_bg != null:
-		_card_bg.color = CARD_COLOR_TRIGGERED if is_triggered else CARD_COLOR_READY
+		var base_color := CARD_COLOR_TRIGGERED if is_triggered else CARD_COLOR_READY
+		var pulse := 0.0
+		if highlight_alpha > 0.001:
+			var phase := float(Time.get_ticks_msec() % 320) / 320.0
+			pulse = 0.42 + 0.58 * sin(phase * TAU) * 0.5 + 0.29
+		var glow_mix := clampf(highlight_alpha * (0.62 + pulse * 0.24), 0.0, 1.0)
+		var flash_mix := clampf(highlight_alpha * pulse * 0.35, 0.0, 1.0)
+		_card_bg.color = base_color.lerp(CARD_HIGHLIGHT_COLOR, glow_mix).lerp(CARD_FLASH_COLOR, flash_mix)
+	var scale_factor := 1.0 + HIGHLIGHT_SCALE_BOOST * highlight_alpha
+	scale = Vector2(scale_factor, scale_factor)
 
 
 func _state_text() -> String:

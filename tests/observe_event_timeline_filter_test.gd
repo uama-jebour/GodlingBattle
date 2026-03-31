@@ -37,6 +37,7 @@ func _run() -> void:
 	var screen: Control = OBSERVE_SCENE.instantiate()
 	root.add_child(screen)
 	await process_frame
+	screen.set_process(false)
 
 	var filter_select := screen.get_node_or_null("EventPanel/EventFilterSelect") as OptionButton
 	var timeline_label := screen.get_node_or_null("EventPanel/EventTimelineLabel") as Label

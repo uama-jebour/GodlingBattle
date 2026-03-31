@@ -114,8 +114,12 @@ func _run() -> void:
 	else:
 		if bool(hero_token.get("is_hit")):
 			_failures.append("hero_1 should not be marked hit when hp is unchanged")
+		if hero_token.get("damage_value") != 0:
+			_failures.append("hero_1 damage_value should be 0 when hp is unchanged")
 		if not bool(enemy_token.get("is_hit")):
 			_failures.append("enemy_1 should be marked hit when hp drops")
+		if enemy_token.get("damage_value") != 30:
+			_failures.append("enemy_1 damage_value should match hp delta (30)")
 
 	screen.call("_seek_to_frame", 2)
 	hero_token = screen.call("get_token_view", "hero_1")

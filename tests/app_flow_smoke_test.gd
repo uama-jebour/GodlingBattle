@@ -39,7 +39,7 @@ func _run() -> void:
 	assert(observe_screen.has_method("play_battle"))
 
 	var guard := 0
-	while guard < 300:
+	while guard < 800:
 		var current := _current_screen(screen_host)
 		if current != null and current.name == "ResultScreen":
 			break
@@ -61,7 +61,7 @@ func _run() -> void:
 	assert(observe_replay.name == "ObserveScreen")
 
 	guard = 0
-	while guard < 300:
+	while guard < 800:
 		var replay_current := _current_screen(screen_host)
 		if replay_current != null and replay_current.name == "ResultScreen":
 			break

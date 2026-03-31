@@ -31,10 +31,10 @@ func _run() -> void:
 	await process_frame
 
 	var targets := {
-		"LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldTitle": 24,
-		"LayoutRoot/LeftColumn/StrategyPanel/StrategyTitle": 24,
-		"LayoutRoot/RightColumn/AliveRosterPanel/RosterTitle": 24,
-		"LayoutRoot/RightColumn/BattleLogPanel/BattleLogTitle": 24
+		"LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldTitle": 26,
+		"LayoutRoot/LeftColumn/StrategyPanel/StrategyTitle": 26,
+		"LayoutRoot/RightColumn/AliveRosterPanel/RosterTitle": 26,
+		"LayoutRoot/RightColumn/BattleLogPanel/BattleLogTitle": 26
 	}
 	for path in targets.keys():
 		var label := screen.get_node_or_null(path) as Label
@@ -47,9 +47,9 @@ func _run() -> void:
 			_failures.append("%s font too small: %d" % [path, font_size])
 
 	var hud_targets := {
-		"LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot/TickLabel": 44,
-		"LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot/EventLabel": 30,
-		"LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot/StrategyCastLabel": 30
+		"LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot/TickLabel": 48,
+		"LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot/EventLabel": 34,
+		"LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot/StrategyCastLabel": 34
 	}
 	for path in hud_targets.keys():
 		var hud_label := screen.get_node_or_null(path) as Label
@@ -60,6 +60,30 @@ func _run() -> void:
 		var font_size := int(hud_label.get_theme_font_size("font_size"))
 		if font_size < minimum_size:
 			_failures.append("%s font too small: %d" % [path, font_size])
+
+	var roster_columns := screen.get_node_or_null("LayoutRoot/RightColumn/AliveRosterPanel/AliveRosterColumns")
+	if roster_columns == null:
+		_failures.append("missing roster columns")
+	else:
+		var body_font_sizes: Array[int] = []
+		var stack: Array[Node] = [roster_columns]
+		while not stack.is_empty():
+			var node: Node = stack.pop_back()
+			for child in node.get_children():
+				stack.append(child as Node)
+			var label := node as Label
+			if label == null:
+				continue
+			if String(label.text) in ["我方", "敌方", "存活名册"]:
+				continue
+			body_font_sizes.append(int(label.get_theme_font_size("font_size")))
+		if body_font_sizes.is_empty():
+			_failures.append("missing roster body label font size sample")
+		else:
+			for font_size in body_font_sizes:
+				if font_size < 24:
+					_failures.append("roster body font too small: %d" % font_size)
+					break
 
 	screen.queue_free()
 	await process_frame

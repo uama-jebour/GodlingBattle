@@ -46,7 +46,7 @@ func _run() -> void:
 	var legacy_event_panel_bg := screen.get_node_or_null("EventPanelBg") as Control
 	if legacy_event_panel_bg != null and legacy_event_panel_bg.visible:
 		_failures.append("EventPanelBg should stay hidden in strict quadrant mode")
-	var hud_root := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot") as Control
+	var hud_root := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot") as Control
 	if hud_root == null:
 		_failures.append("missing HudRoot")
 	else:
@@ -69,18 +69,18 @@ func _run() -> void:
 	if screen.get_node_or_null("LayoutRoot/RightColumn/BattleLogPanel/BattleLogScroll") == null:
 		_failures.append("missing BattleLogScroll")
 
-	var token_host := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/TokenHost") as Control
+	var token_host := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/TokenHost") as Control
 	if token_host == null:
 		_failures.append("missing TokenHost")
 	else:
 		if token_host.mouse_filter != Control.MOUSE_FILTER_IGNORE:
 			_failures.append("TokenHost should ignore mouse input to avoid blocking right panel")
-	var ally_layer := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/TokenHost/AllyLayer") as Control
+	var ally_layer := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/TokenHost/AllyLayer") as Control
 	if ally_layer == null:
 		_failures.append("missing AllyLayer")
 	elif ally_layer.mouse_filter != Control.MOUSE_FILTER_IGNORE:
 		_failures.append("AllyLayer should ignore mouse input")
-	var enemy_layer := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/TokenHost/EnemyLayer") as Control
+	var enemy_layer := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/TokenHost/EnemyLayer") as Control
 	if enemy_layer == null:
 		_failures.append("missing EnemyLayer")
 	elif enemy_layer.mouse_filter != Control.MOUSE_FILTER_IGNORE:

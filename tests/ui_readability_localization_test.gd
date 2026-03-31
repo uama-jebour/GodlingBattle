@@ -72,20 +72,9 @@ func _check_preparation_screen() -> void:
 		if battle_select.custom_minimum_size.y < 88.0:
 			_failures.append("battle select height should be >= 88")
 
-	var seed_input := prep.get_node_or_null("Layout/SeedInput") as SpinBox
-	if seed_input == null:
-		_failures.append("missing seed input")
-	else:
-		if seed_input.custom_minimum_size.y < 88.0:
-			_failures.append("seed input height should be >= 88")
-		var seed_line_edit := seed_input.get_line_edit()
-		if seed_line_edit == null:
-			_failures.append("seed input line edit should exist")
-		else:
-			if int(seed_line_edit.get_theme_font_size("font_size")) < 38:
-				_failures.append("seed value font should be >= 38")
-			if seed_line_edit.custom_minimum_size.y < 72.0:
-				_failures.append("seed line edit height should be >= 72")
+	var seed_input := prep.get_node_or_null("Layout/SeedInput")
+	if seed_input != null:
+		_failures.append("seed input should be removed from preparation layout")
 
 	var strategy_checkbox := prep.get_node_or_null("Layout/StrategyList/Strategy_strat_void_echo") as CheckBox
 	if strategy_checkbox == null:

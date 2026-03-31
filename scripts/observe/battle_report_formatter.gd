@@ -88,9 +88,9 @@ func _build_brief_line(row: Dictionary, tick: int) -> String:
 	var event_type := str(row.get("type", ""))
 	match event_type:
 		"strategy_cast":
-			return "第%d帧战技施放：%s" % [tick, _resolver.strategy_name(str(row.get("strategy_id", "")))]
+			return "第%d帧战技%s：%s" % [tick, _strategy_cast_mode_label(row), _resolver.strategy_name(str(row.get("strategy_id", "")))]
 		"event_warning":
-			return "第%d帧事件预警：%s（%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _warning_countdown_text(row)]
+			return "第%d帧事件预警：%s（%s，%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _warning_countdown_text(row), _warning_response_text(row)]
 		"event_resolve":
 			return "第%d帧事件结算：%s（%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _responded_text(row)]
 		"event_unresolved_effect":
@@ -113,9 +113,9 @@ func _build_detail_line(row: Dictionary, tick: int) -> String:
 	var event_type := str(row.get("type", ""))
 	match event_type:
 		"strategy_cast":
-			return "第%d帧释放战技：%s（施放）" % [tick, _resolver.strategy_name(str(row.get("strategy_id", "")))]
+			return "第%d帧释放战技：%s（%s）" % [tick, _resolver.strategy_name(str(row.get("strategy_id", ""))), _strategy_cast_mode_label(row)]
 		"event_warning":
-			return "第%d帧收到事件预警：%s（%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _warning_countdown_text(row)]
+			return "第%d帧收到事件预警：%s（%s，%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _warning_countdown_text(row), _warning_response_text(row)]
 		"event_resolve":
 			return "第%d帧结算事件：%s（%s）" % [tick, _resolver.event_name(str(row.get("event_id", ""))), _responded_text(row)]
 		"event_unresolved_effect":
@@ -145,6 +145,18 @@ func _warning_countdown_text(row: Dictionary) -> String:
 	return "%d秒后" % seconds
 
 
+func _warning_response_text(row: Dictionary) -> String:
+	if bool(row.get("response_ready", false)):
+		var strategy_id := str(row.get("response_strategy_id", ""))
+		if not strategy_id.is_empty():
+			return "可响应：%s" % _resolver.strategy_name(strategy_id)
+		return "可响应"
+	var missing_reason := str(row.get("response_missing_reason", ""))
+	if missing_reason.is_empty():
+		missing_reason = "未携带对应对策"
+	return "不可响应：%s" % missing_reason
+
+
 func _warning_seconds(row: Dictionary) -> int:
 	if row.has("warning_seconds"):
 		return maxi(0, int(round(float(row.get("warning_seconds", 0.0)))))
@@ -166,3 +178,10 @@ func _ensure_warning_seconds_cache() -> void:
 			var event_def: Dictionary = raw_events[event_id]
 			_warning_seconds_by_event_id[str(event_id)] = int(round(float(event_def.get("warning_seconds", 0.0))))
 	content.free()
+
+
+func _strategy_cast_mode_label(row: Dictionary) -> String:
+	var cast_mode := str(row.get("cast_mode", ""))
+	if cast_mode == "passive":
+		return "被动生效"
+	return "施放"

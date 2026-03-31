@@ -3,5 +3,5 @@
 [ext_resource type="Script" path="res://scripts/observe/token_view.gd" id="1"]
 
 [node name="TokenView" type="Control"]
-custom_minimum_size = Vector2(96, 112)
+custom_minimum_size = Vector2(115.2, 134.4)
 script = ExtResource("1")

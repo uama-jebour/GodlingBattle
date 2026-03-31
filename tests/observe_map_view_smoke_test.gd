@@ -26,10 +26,10 @@ func _run() -> void:
 
 	var battlefield_panel := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel")
 	assert(battlefield_panel != null)
-	var battle_map := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattleMap")
+	var battle_map := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/BattleMap")
 	assert(battle_map != null)
-	var token_host := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/TokenHost")
-	var hud_root := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot")
+	var token_host := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/TokenHost")
+	var hud_root := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot")
 	assert(token_host != null)
 	assert(hud_root != null)
 	assert(battle_map.get_index() < token_host.get_index())

@@ -1,7 +1,7 @@
 extends SceneTree
 
 const SOLVER_PATH := "res://scripts/observe/battlefield_layout_solver.gd"
-const TOKEN_SIZE := Vector2(96, 112)
+const TOKEN_SIZE := Vector2(115.2, 134.4)
 
 var _failures: Array[String] = []
 
@@ -66,6 +66,26 @@ func _run() -> void:
 	_assert_side_non_overlap(dense_resolved, "ally", "dense ally slots should not overlap")
 	_assert_side_non_overlap(dense_resolved, "enemy", "dense enemy slots should not overlap")
 	_assert_rows_within_bounds(dense_resolved, Rect2(0, 0, 640, 360), "dense rows should stay within battlefield bounds")
+	var cross_overlap_rows := [
+		{"entity_id": "ally_cross_0", "side": "ally", "position": Vector2(312, 196)},
+		{"entity_id": "enemy_cross_0", "side": "enemy", "position": Vector2(318, 202)}
+	]
+	var cross_resolved: Array = solver.resolve(cross_overlap_rows, Rect2(0, 0, 640, 360))
+	_assert_pair_non_overlap(cross_resolved, ["ally_cross_0", "enemy_cross_0"], "cross-side pair should avoid overlap")
+
+	var moving_frame_a: Array = solver.resolve([
+		{"entity_id": "hero_angel_0", "side": "hero", "position": Vector2(120, 220)}
+	], Rect2(0, 0, 640, 360))
+	var moving_frame_b: Array = solver.resolve([
+		{"entity_id": "hero_angel_0", "side": "hero", "position": Vector2(320, 220)}
+	], Rect2(0, 0, 640, 360))
+	if moving_frame_a.is_empty() or moving_frame_b.is_empty():
+		_failures.append("moving frame snapshots should not be empty")
+	else:
+		var x_a := float((moving_frame_a[0] as Dictionary).get("position", Vector2.ZERO).x)
+		var x_b := float((moving_frame_b[0] as Dictionary).get("position", Vector2.ZERO).x)
+		if x_b <= x_a + 20.0:
+			_failures.append("resolved x should follow movement trend with smoothing (x_a=%f, x_b=%f)" % [x_a, x_b])
 	_finish()
 
 

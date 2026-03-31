@@ -60,14 +60,20 @@ theme_override_constants/separation = 8
 [node name="BattlefieldTitle" type="Label" parent="LayoutRoot/LeftColumn/BattlefieldPanel"]
 layout_mode = 2
 text = "战场视图"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 
 [node name="BattlefieldHint" type="Label" parent="LayoutRoot/LeftColumn/BattlefieldPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 autowrap_mode = 2
 text = "战场与单位层保留现有运行时节点，后续任务将在此区域继续扩展。"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
+
+[node name="BattlefieldRuntime" type="Control" parent="LayoutRoot/LeftColumn/BattlefieldPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
 
 [node name="StrategyPanel" type="VBoxContainer" parent="LayoutRoot/LeftColumn"]
 layout_mode = 2
@@ -78,13 +84,13 @@ theme_override_constants/separation = 8
 [node name="StrategyTitle" type="Label" parent="LayoutRoot/LeftColumn/StrategyPanel"]
 layout_mode = 2
 text = "战术策略"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 
 [node name="StrategyHint" type="Label" parent="LayoutRoot/LeftColumn/StrategyPanel"]
 layout_mode = 2
 autowrap_mode = 2
 text = "策略卡片区已预留，现阶段继续兼容现有观察回放逻辑。"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 
 [node name="RightColumn" type="VBoxContainer" parent="LayoutRoot"]
 layout_mode = 2
@@ -102,13 +108,13 @@ theme_override_constants/separation = 8
 [node name="RosterTitle" type="Label" parent="LayoutRoot/RightColumn/AliveRosterPanel"]
 layout_mode = 2
 text = "存活名册"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 
 [node name="RosterHint" type="Label" parent="LayoutRoot/RightColumn/AliveRosterPanel"]
 layout_mode = 2
 autowrap_mode = 2
 text = "右上区域已预留给存活名册，后续任务会填充实时名单。"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 
 [node name="BattleLogPanel" type="VBoxContainer" parent="LayoutRoot/RightColumn"]
 layout_mode = 2
@@ -119,25 +125,25 @@ theme_override_constants/separation = 8
 [node name="BattleLogTitle" type="Label" parent="LayoutRoot/RightColumn/BattleLogPanel"]
 layout_mode = 2
 text = "战斗日志"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 
 [node name="BattleLogHint" type="Label" parent="LayoutRoot/RightColumn/BattleLogPanel"]
 layout_mode = 2
 autowrap_mode = 2
 text = "战报中心继续沿用现有 EventPanel 节点，后续任务会将日志内容正式接入这里。"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 
 [node name="PauseButton" type="Button" parent="PlaybackPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 72)
 text = "暂停"
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 32
 
 [node name="StepBackButton" type="Button" parent="PlaybackPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(220, 72)
 text = "后退10帧"
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 
 [node name="ProgressSlider" type="HSlider" parent="PlaybackPanel"]
 layout_mode = 2
@@ -148,12 +154,12 @@ step = 1.0
 layout_mode = 2
 custom_minimum_size = Vector2(220, 72)
 text = "前进10帧"
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 
 [node name="SpeedSelect" type="OptionButton" parent="PlaybackPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 72)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 
 [node name="EventPanel" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -186,29 +192,29 @@ color = Color(0.113725, 0.14902, 0.105882, 0.9)
 [node name="EventFilterSelect" type="OptionButton" parent="EventPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 66)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 
 [node name="EventTimelineZoomSelect" type="OptionButton" parent="EventPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 66)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 
 [node name="EventTimelineDensitySelect" type="OptionButton" parent="EventPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 66)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 
 [node name="BattleOverviewLabel" type="Label" parent="EventPanel"]
 layout_mode = 2
 autowrap_mode = 2
 text = "战况总览："
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 
 [node name="TickSummaryLabel" type="Label" parent="EventPanel"]
 layout_mode = 2
 autowrap_mode = 2
 text = "本帧动态："
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 
 [node name="DetailSectionTitleBar" type="ColorRect" parent="EventPanel"]
 layout_mode = 2
@@ -226,19 +232,19 @@ grow_vertical = 2
 text = "战术明细区（最近12条）"
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 23
+theme_override_font_sizes/font_size = 25
 
 [node name="DetailToggleButton" type="Button" parent="EventPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 58)
 text = "展开战术明细"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 
 [node name="DetailLogList" type="ItemList" parent="EventPanel"]
 visible = false
 layout_mode = 2
 custom_minimum_size = Vector2(0, 180)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 
 [node name="TimelineSectionTitleBar" type="ColorRect" parent="EventPanel"]
 layout_mode = 2
@@ -256,16 +262,16 @@ grow_vertical = 2
 text = "事件标记区（可点击跳帧）"
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 23
+theme_override_font_sizes/font_size = 25
 
 [node name="EventTimelineLabel" type="Label" parent="EventPanel"]
 layout_mode = 2
 autowrap_mode = 2
 text = "事件标记：无"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 
 [node name="EventMarkerList" type="ItemList" parent="EventPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 220)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26

@@ -3,15 +3,14 @@ extends Control
 const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 const DEFAULT_STRATEGY_BUDGET := 16
 const DEFAULT_ALLY_IDS := ["ally_hound_remnant", "ally_hound_remnant", "ally_hound_remnant"]
-const VOID_ECHO_STRATEGY_ID := "strat_void_echo"
+const DEFAULT_STRATEGY_SELECTED_COUNT := 4
 const STRATEGY_CHECK_ICON_SIZE := 40
 
 var _current_selection: Dictionary = {
 	"hero_id": "hero_angel",
 	"ally_ids": DEFAULT_ALLY_IDS.duplicate(),
-	"strategy_ids": [VOID_ECHO_STRATEGY_ID],
-	"battle_id": "battle_void_gate_alpha",
-	"seed": 1001
+	"strategy_ids": [],
+	"battle_id": "battle_void_gate_alpha"
 }
 var _is_syncing_controls := false
 var _strategy_checkboxes: Dictionary = {}
@@ -20,7 +19,6 @@ var _strategy_checkboxes: Dictionary = {}
 @onready var title_label: Label = $Layout/TitleLabel
 @onready var hero_select: OptionButton = $Layout/HeroSelect
 @onready var battle_select: OptionButton = $Layout/BattleSelect
-@onready var seed_input: SpinBox = $Layout/SeedInput
 @onready var strategy_list: VBoxContainer = $Layout/StrategyList
 @onready var budget_label: Label = $Layout/BudgetLabel
 @onready var selection_summary: Label = $Layout/SelectionSummary
@@ -31,7 +29,6 @@ var _strategy_checkboxes: Dictionary = {}
 
 func _ready() -> void:
 	title_label.text = "出战前准备"
-	seed_input.prefix = "种子："
 	_apply_control_visual_emphasis()
 	_bind_content_options()
 	_bind_control_events()
@@ -59,7 +56,34 @@ func _bind_content_options() -> void:
 	battle_select.add_item("关卡：%s" % String(battle.get("display_name", "虚无裂隙·一层")), 0)
 	battle_select.set_item_metadata(0, "battle_void_gate_alpha")
 	_rebuild_strategy_options(content)
+	_apply_default_strategy_selection_if_needed(content)
 	content.free()
+
+
+func _apply_default_strategy_selection_if_needed(content: Node) -> void:
+	var selected_ids: Array[String] = []
+	for strategy_id_raw in _current_selection.get("strategy_ids", []):
+		var strategy_id := String(strategy_id_raw)
+		if strategy_id.is_empty():
+			continue
+		if selected_ids.has(strategy_id):
+			continue
+		if content.get_strategy(strategy_id).is_empty():
+			continue
+		selected_ids.append(strategy_id)
+	if selected_ids.is_empty():
+		selected_ids = _default_strategy_ids(content)
+	_current_selection["strategy_ids"] = selected_ids
+
+
+func _default_strategy_ids(content: Node) -> Array[String]:
+	var all_ids: Array[String] = content.get_all_strategy_ids()
+	all_ids.sort()
+	var defaults: Array[String] = []
+	var limit := mini(DEFAULT_STRATEGY_SELECTED_COUNT, all_ids.size())
+	for index in range(limit):
+		defaults.append(all_ids[index])
+	return defaults
 
 
 func _bind_control_events() -> void:
@@ -67,15 +91,12 @@ func _bind_control_events() -> void:
 		hero_select.item_selected.connect(_on_control_changed)
 	if not battle_select.item_selected.is_connected(_on_control_changed):
 		battle_select.item_selected.connect(_on_control_changed)
-	if not seed_input.value_changed.is_connected(_on_seed_changed):
-		seed_input.value_changed.connect(_on_seed_changed)
 
 
 func _apply_selection_to_controls() -> void:
 	_is_syncing_controls = true
 	_select_option_by_metadata(hero_select, String(_current_selection.get("hero_id", "")))
 	_select_option_by_metadata(battle_select, String(_current_selection.get("battle_id", "")))
-	seed_input.value = float(int(_current_selection.get("seed", 1)))
 	var strategy_ids: Array = _current_selection.get("strategy_ids", [])
 	for strategy_id in _strategy_checkboxes.keys():
 		var checkbox := _strategy_checkboxes[strategy_id] as CheckBox
@@ -100,8 +121,7 @@ func _pull_selection_from_controls() -> void:
 		"hero_id": _selected_metadata(hero_select, "hero_angel"),
 		"ally_ids": ally_ids.duplicate(),
 		"strategy_ids": strategy_ids,
-		"battle_id": _selected_metadata(battle_select, "battle_void_gate_alpha"),
-		"seed": int(seed_input.value)
+		"battle_id": _selected_metadata(battle_select, "battle_void_gate_alpha")
 	}
 
 
@@ -165,13 +185,6 @@ func _on_control_changed(_index: int) -> void:
 	_render_shell()
 
 
-func _on_seed_changed(_value: float) -> void:
-	if _is_syncing_controls:
-		return
-	_pull_selection_from_controls()
-	_render_shell()
-
-
 func _on_strategy_toggled(_enabled: bool) -> void:
 	if _is_syncing_controls:
 		return
@@ -214,12 +227,18 @@ func build_battle_setup(selection: Dictionary) -> Dictionary:
 		"ally_ids": ally_ids.duplicate(),
 		"strategy_ids": strategy_ids.duplicate(),
 		"battle_id": battle_id,
-		"seed": int(selection.get("seed", 0))
+		"seed": int(selection.get("seed", 0)),
+		"randomized_spawn": bool(selection.get("randomized_spawn", false))
 	}
 
 
 func start_battle(selection: Dictionary) -> void:
-	var setup := build_battle_setup(selection)
+	var seeded_selection := selection.duplicate(true)
+	var explicit_seed := int(seeded_selection.get("seed", 0))
+	var using_auto_seed := explicit_seed == 0
+	seeded_selection["seed"] = explicit_seed if not using_auto_seed else _auto_battle_seed()
+	seeded_selection["randomized_spawn"] = using_auto_seed
+	var setup := build_battle_setup(seeded_selection)
 	if setup.has("invalid_reason"):
 		var invalid_reason := String(setup.get("invalid_reason", "unknown"))
 		error_label.text = "无法开始出战: %s" % _describe_invalid_reason(invalid_reason)
@@ -281,8 +300,13 @@ func _format_battle_summary(setup: Dictionary) -> String:
 	var content: Node = BATTLE_CONTENT.new()
 	var battle_name := _resolve_battle_name(content, String(setup.get("battle_id", "")))
 	content.free()
-	var seed := int(setup.get("seed", 0))
-	return "出战信息\n关卡：%s\n种子：%d" % [battle_name, seed]
+	return "出战信息\n关卡：%s\n随机战局：每次开战自动生成" % battle_name
+
+
+func _auto_battle_seed() -> int:
+	var unix_seconds := int(Time.get_unix_time_from_system())
+	var ticks_usec := int(Time.get_ticks_usec() & 0x7fffffff)
+	return max(1, unix_seconds ^ ticks_usec)
 
 
 func _resolve_unit_name(content: Node, unit_id: String) -> String:
@@ -334,19 +358,6 @@ func _apply_control_visual_emphasis() -> void:
 
 	_apply_option_button_style(hero_select, normal_style, hover_style, press_style, focus_style)
 	_apply_option_button_style(battle_select, normal_style, hover_style, press_style, focus_style)
-
-	seed_input.add_theme_font_size_override("font_size", 40)
-	seed_input.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96))
-	var seed_line_edit := seed_input.get_line_edit()
-	if seed_line_edit != null:
-		seed_line_edit.custom_minimum_size = Vector2(0, 74)
-		seed_line_edit.add_theme_font_size_override("font_size", 40)
-		seed_line_edit.add_theme_stylebox_override("normal", normal_style.duplicate())
-		seed_line_edit.add_theme_stylebox_override("read_only", normal_style.duplicate())
-		seed_line_edit.add_theme_stylebox_override("focus", focus_style.duplicate())
-		seed_line_edit.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96))
-		seed_line_edit.add_theme_color_override("font_placeholder_color", Color(0.85, 0.87, 0.9))
-
 
 func _apply_option_button_style(option_button: OptionButton, normal_style: StyleBoxFlat, hover_style: StyleBoxFlat, press_style: StyleBoxFlat, focus_style: StyleBoxFlat) -> void:
 	option_button.add_theme_font_size_override("font_size", 42)

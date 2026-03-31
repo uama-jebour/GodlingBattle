@@ -4,6 +4,7 @@ const RUNNER := preload("res://scripts/battle_runtime/battle_runner.gd")
 const TOKEN_VIEW_SCENE := preload("res://scenes/observe/token_view.tscn")
 const BATTLE_MAP_SCENE := preload("res://scenes/observe/battle_map_view.tscn")
 const STRATEGY_CARD_SCENE := preload("res://scenes/observe/strategy_card_view.tscn")
+const COMBAT_LINE_OVERLAY := preload("res://scripts/observe/combat_line_overlay.gd")
 const BATTLEFIELD_LAYOUT_SOLVER := preload("res://scripts/observe/battlefield_layout_solver.gd")
 const DISPLAY_NAME_RESOLVER := preload("res://scripts/ui/display_name_resolver.gd")
 const BATTLE_REPORT_FORMATTER := preload("res://scripts/observe/battle_report_formatter.gd")
@@ -12,10 +13,27 @@ const FRAME_STEP_SECONDS := 0.05
 const JUMP_FRAME_DELTA := 10
 const DEATH_MARKER_LINGER_TICKS := 12
 const DEFAULT_TICK_RATE := 10.0
-const FONT_SIZE_PANEL_TITLE := 24
-const FONT_SIZE_PANEL_BODY := 20
-const FONT_SIZE_HUD_TICK := 44
-const FONT_SIZE_HUD_EVENT := 30
+const ATTACK_LINE_LINGER_FRAMES := 6
+const STRATEGY_LINE_LINGER_FRAMES := 10
+const STRATEGY_HIGHLIGHT_LINGER_TICKS := 8
+const EVENT_RESPONSE_INDICATOR_LINGER_TICKS := 14
+const STRATEGY_NAME_POPUP_LINGER_TICKS := 7
+const STRATEGY_NAME_POPUP_SCALE_BOOST := 0.22
+const STRATEGY_FLASH_LINGER_TICKS := 3
+const STRATEGY_FLASH_MAX_ALPHA := 0.17
+const FONT_SIZE_PANEL_TITLE := 28
+const FONT_SIZE_PANEL_BODY := 26
+const FONT_SIZE_HUD_TICK := 50
+const FONT_SIZE_HUD_EVENT := 36
+const FONT_SIZE_STRATEGY_POPUP := 46
+const HUD_BG_TOP := 14.0
+const HUD_BG_HEIGHT := 62.0
+const LOG_BAR_COLOR_KEY := "#E7C96A"
+const LOG_BAR_COLOR_WARNING := "#E59A55"
+const LOG_BAR_COLOR_CAST := "#78C8FF"
+const LOG_BAR_COLOR_DOWN := "#F07F7F"
+const LOG_BAR_COLOR_DEFAULT := "#B5C0CD"
+const RUNTIME_ARENA_BOUNDS := Rect2(120.0, 200.0, 620.0, 620.0)
 
 var _timeline: Array = []
 var _frame_index := 0
@@ -25,18 +43,22 @@ var _current_entities: Array = []
 var _playback_accumulator := 0.0
 var _is_playing := false
 var _is_paused := false
-var _playback_speed := 1.0
+var _playback_speed := 0.5
 var _token_host: Control
 var _ally_layer: Control
 var _enemy_layer: Control
 var _hud_root: Control
+var _screen_flash_rect: ColorRect
 var _tick_label: Label
 var _event_label: Label
 var _strategy_cast_label: Label
+var _strategy_name_popup_label: Label
 var _token_views: Dictionary = {}
 var _event_rows: Array = []
 var _battle_result: Dictionary = {}
 var _battle_map: Control
+var _line_overlay: Control
+var _combat_lines: Array = []
 var _battlefield_layout_solver := BATTLEFIELD_LAYOUT_SOLVER.new()
 var _display_name_resolver := DISPLAY_NAME_RESOLVER.new()
 var _battle_report_formatter := BATTLE_REPORT_FORMATTER.new()
@@ -44,12 +66,14 @@ var _strategy_panel_strategy_ids: Array[String] = []
 var _strategy_panel_cooldown_seconds_by_id: Dictionary = {}
 var _strategy_panel_display_name_by_id: Dictionary = {}
 var _strategy_cast_ticks_by_id: Dictionary = {}
+var _strategy_panel_effect_type_by_id: Dictionary = {}
 var _strategy_card_host: HBoxContainer
 var _strategy_card_views: Dictionary = {}
 var _ally_roster_label: Label
 var _enemy_roster_label: Label
 var _battle_log_scroll: ScrollContainer
 var _battle_log_text_label: RichTextLabel
+var _battle_log_legend_label: RichTextLabel
 var _prev_hp_by_entity: Dictionary = {}
 var _death_marker_until_tick: Dictionary = {}
 @onready var _pause_button: Button = $PlaybackPanel/PauseButton
@@ -81,6 +105,7 @@ func _ready() -> void:
 	_ensure_strategy_card_host()
 	_ensure_alive_roster_panel()
 	_ensure_battle_log_panel()
+	_ensure_combat_line_overlay()
 	_detail_log_expanded = false
 	_refresh_detail_log_visibility()
 	var session_state := _session_state()
@@ -97,6 +122,7 @@ func _ready() -> void:
 		_refresh_strategy_cards(_display_tick())
 		_refresh_alive_roster_panel()
 		_refresh_battle_log_panel()
+		_refresh_combat_line_overlay()
 		return
 	if session_state.last_timeline.is_empty():
 		play_battle(session_state.battle_setup)
@@ -113,7 +139,7 @@ func _ready() -> void:
 	_current_frame_index = -1
 	_playback_accumulator = 0.0
 	_is_paused = false
-	_playback_speed = 1.0
+	_playback_speed = 0.5
 	_select_speed_by_value(_playback_speed)
 	_is_playing = not _timeline.is_empty()
 	_refresh_event_timeline()
@@ -125,6 +151,7 @@ func _ready() -> void:
 	_refresh_strategy_cards(_display_tick())
 	_refresh_alive_roster_panel()
 	_refresh_battle_log_panel()
+	_refresh_combat_line_overlay()
 	if _is_playing:
 		set_process(true)
 	else:
@@ -161,12 +188,12 @@ func _process(delta: float) -> void:
 
 func _bind_playback_controls() -> void:
 	if _speed_select.item_count == 0:
-		_speed_select.add_item("1倍速", 0)
-		_speed_select.set_item_metadata(0, 1.0)
-		_speed_select.add_item("2倍速", 1)
-		_speed_select.set_item_metadata(1, 2.0)
-		_speed_select.add_item("4倍速", 2)
-		_speed_select.set_item_metadata(2, 4.0)
+		_speed_select.add_item("0.5倍速", 0)
+		_speed_select.set_item_metadata(0, 0.5)
+		_speed_select.add_item("1倍速", 1)
+		_speed_select.set_item_metadata(1, 1.0)
+		_speed_select.add_item("2倍速", 2)
+		_speed_select.set_item_metadata(2, 2.0)
 	if not _pause_button.pressed.is_connected(_on_pause_pressed):
 		_pause_button.pressed.connect(_on_pause_pressed)
 	if not _step_back_button.pressed.is_connected(_on_step_back_pressed):
@@ -324,27 +351,29 @@ func apply_timeline_frame(frame: Dictionary) -> void:
 	_current_tick = int(frame.get("tick", 0))
 	_current_entities = frame.get("entities", []).duplicate(true)
 	_prev_hp_by_entity = _hp_lookup_for_frame_index(_current_frame_index - 1)
+	_ensure_map()
 	var snapshot := build_token_snapshot()
 	sync_token_views(snapshot)
-	_ensure_map()
 	_battle_map.call("set_snapshot", snapshot)
 	update_hud_for_tick(_current_tick, _event_rows)
 
 
 func build_token_snapshot() -> Array:
+	var battlefield_bounds := _battlefield_bounds()
 	var rows: Array = []
 	for entity in _current_entities:
 		if not _should_render_entity(entity):
 			continue
 		rows.append({
 			"entity_id": str(entity.get("entity_id", "")),
+			"unit_id": str(entity.get("unit_id", "")),
 			"display_name": str(entity.get("display_name", "")),
 			"side": str(entity.get("side", "")),
 			"hp_ratio": _hp_ratio(entity),
-			"position": _entity_position(entity),
+			"position": _entity_position_in_battlefield(entity, battlefield_bounds),
 			"visual_flags": _build_visual_flags(entity)
 		})
-	return _battlefield_layout_solver.resolve(rows, _battlefield_bounds())
+	return _battlefield_layout_solver.resolve(rows, battlefield_bounds)
 
 
 func _should_render_entity(entity: Dictionary) -> bool:
@@ -469,6 +498,7 @@ func get_token_parent_name(entity_id: String) -> String:
 
 func update_hud_for_tick(tick: int, event_rows: Array) -> void:
 	_ensure_hud()
+	_current_tick = tick
 	_tick_label.text = "第%d帧" % tick
 	var messages: Array[String] = []
 	var filtered_rows := _filter_event_rows(event_rows)
@@ -481,12 +511,14 @@ func update_hud_for_tick(tick: int, event_rows: Array) -> void:
 	else:
 		_event_label.text = " | ".join(messages)
 	_strategy_cast_label.text = _build_strategy_cast_text(tick, filtered_rows)
+	_refresh_strategy_cast_fx(tick)
 	_refresh_tick_summary(tick, event_rows)
 	_refresh_detail_log(tick, event_rows)
 	_refresh_battle_overview()
 	_refresh_strategy_cards(tick)
 	_refresh_alive_roster_panel()
 	_refresh_battle_log_panel()
+	_refresh_combat_line_overlay()
 
 
 func get_tick_text() -> String:
@@ -516,6 +548,12 @@ func get_battle_log_text() -> String:
 	return "\n".join(PackedStringArray(_build_battle_log_lines()))
 
 
+func get_battle_log_legend_text() -> String:
+	if _battle_log_legend_label == null:
+		return ""
+	return _battle_log_legend_label.get_parsed_text()
+
+
 func get_event_timeline_text() -> String:
 	if _event_timeline_label == null:
 		return ""
@@ -542,14 +580,92 @@ func get_detail_log_visible() -> bool:
 	return _detail_log_list != null and _detail_log_list.visible
 
 
+func get_combat_line_count() -> int:
+	return _combat_lines.size()
+
+
+func get_attack_line_count() -> int:
+	return _line_count_by_kind("attack")
+
+
+func get_strategy_line_count() -> int:
+	return _line_count_by_kind("strategy")
+
+
+func get_strategy_card_highlight_count() -> int:
+	var count := 0
+	for strategy_id in _strategy_card_views.keys():
+		var card: Variant = _strategy_card_views.get(strategy_id, null)
+		if card == null:
+			continue
+		var alpha := float(card.get("highlight_alpha"))
+		if alpha > 0.001:
+			count += 1
+	return count
+
+
+func get_strategy_target_highlight_count() -> int:
+	var count := 0
+	for entity_id in _token_views.keys():
+		var token: Variant = _token_views.get(entity_id, null)
+		if token == null:
+			continue
+		var alpha := float(token.get("strategy_highlight_alpha"))
+		if alpha > 0.001:
+			count += 1
+	return count
+
+
+func get_strategy_origin_pulse_count() -> int:
+	var count := 0
+	for row in _combat_lines:
+		var line := row as Dictionary
+		if str(line.get("kind", "")) != "strategy":
+			continue
+		if float(line.get("origin_pulse_alpha", 0.0)) > 0.001:
+			count += 1
+	return count
+
+
+func get_event_response_indicator_count() -> int:
+	return _line_count_by_kind("event_response_indicator")
+
+
+func get_event_response_seal_count() -> int:
+	var count := 0
+	for row in _combat_lines:
+		var line := row as Dictionary
+		if str(line.get("kind", "")) != "event_response_indicator":
+			continue
+		if str(line.get("variant", "")) != "seal_x":
+			continue
+		count += 1
+	return count
+
+
+func get_strategy_name_popup_alpha() -> float:
+	if _strategy_name_popup_label == null:
+		return 0.0
+	return _strategy_name_popup_label.modulate.a
+
+
+func get_strategy_screen_flash_alpha() -> float:
+	if _screen_flash_rect == null:
+		return 0.0
+	return _screen_flash_rect.color.a
+
+
 func _build_visual_flags(entity: Dictionary) -> Dictionary:
 	var entity_id := str(entity.get("entity_id", ""))
 	var hp_now := float(entity.get("hp", 0.0))
 	var hp_prev := float(_prev_hp_by_entity.get(entity_id, hp_now))
 	var is_dead := not bool(entity.get("alive", false))
+	var damage_value := maxi(0, roundi(hp_prev - hp_now))
 	return {
 		"is_hit": hp_now < hp_prev,
+		"damage_value": damage_value,
 		"is_affected": _has_tick_effect(entity_id, _current_tick),
+		"strategy_highlight_alpha": _strategy_target_highlight_alpha(entity_id, _current_tick),
 		"is_dead": is_dead,
 		"show_death_marker_until_tick": _death_marker_expiry_tick(entity_id, is_dead),
 		"current_tick": _current_tick
@@ -562,7 +678,9 @@ func _visual_flags_from_snapshot(row: Dictionary) -> Dictionary:
 		return flags
 	return {
 		"is_hit": false,
+		"damage_value": 0,
 		"is_affected": false,
+		"strategy_highlight_alpha": 0.0,
 		"is_dead": false,
 		"show_death_marker_until_tick": -1,
 		"current_tick": _current_tick
@@ -647,7 +765,38 @@ func _entity_position(entity: Dictionary) -> Vector2:
 	return Vector2.ZERO
 
 
+func _entity_position_in_battlefield(entity: Dictionary, battlefield_bounds: Rect2) -> Vector2:
+	var runtime_position := _entity_position(entity)
+	if battlefield_bounds.size.x <= 0.0 or battlefield_bounds.size.y <= 0.0:
+		return runtime_position
+	var arena := RUNTIME_ARENA_BOUNDS
+	if arena.size.x <= 0.0 or arena.size.y <= 0.0:
+		return runtime_position
+	var ratio_x := clampf((runtime_position.x - arena.position.x) / arena.size.x, 0.0, 1.0)
+	var ratio_y := clampf((runtime_position.y - arena.position.y) / arena.size.y, 0.0, 1.0)
+	return Vector2(
+		battlefield_bounds.position.x + battlefield_bounds.size.x * ratio_x,
+		battlefield_bounds.position.y + battlefield_bounds.size.y * ratio_y
+	)
+
+
 func _battlefield_bounds() -> Rect2:
+	var host := _battlefield_panel_host()
+	var panel_size := host.size
+	if _battle_map != null and _battle_map.has_method("get_playable_bounds"):
+		var playable: Rect2 = _battle_map.call("get_playable_bounds")
+		if playable.size.x > 0.0 and playable.size.y > 0.0:
+			var hud_floor := _hud_reserved_bottom() + 8.0
+			var y_start := maxf(playable.position.y, hud_floor)
+			var y_end := playable.end.y
+			if y_end > y_start:
+				return Rect2(
+					Vector2(playable.position.x, y_start),
+					Vector2(playable.size.x, y_end - y_start)
+				)
+			return playable
+	if panel_size.x > 0.0 and panel_size.y > 0.0:
+		return Rect2(Vector2.ZERO, panel_size)
 	if _battle_map != null:
 		var battle_map_rect := _battle_map.get_rect()
 		if battle_map_rect.size.x > 0.0 and battle_map_rect.size.y > 0.0:
@@ -656,6 +805,15 @@ func _battlefield_bounds() -> Rect2:
 	if screen_rect.size.x > 0.0 and screen_rect.size.y > 0.0:
 		return screen_rect
 	return Rect2(0, 0, 640, 360)
+
+
+func _hud_reserved_bottom() -> float:
+	if _hud_root == null:
+		return 0.0
+	var hud_bg := _hud_root.get_node_or_null("HudBg") as Control
+	if hud_bg != null and hud_bg.visible:
+		return hud_bg.position.y + hud_bg.size.y
+	return 0.0
 
 
 func _ensure_token_host() -> void:
@@ -697,18 +855,26 @@ func _ensure_hud() -> void:
 	_hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	battlefield_panel.add_child(_hud_root)
 
+	_screen_flash_rect = ColorRect.new()
+	_screen_flash_rect.name = "StrategyScreenFlash"
+	_screen_flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_screen_flash_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_screen_flash_rect.color = Color(0.78, 0.90, 1.0, 0.0)
+	_hud_root.add_child(_screen_flash_rect)
+
 	var hud_bg := ColorRect.new()
 	hud_bg.name = "HudBg"
 	hud_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud_bg.position = Vector2(14, 14)
-	hud_bg.size = Vector2(1400, 170)
+	hud_bg.position = Vector2(14, HUD_BG_TOP)
+	hud_bg.size = Vector2(1400, HUD_BG_HEIGHT)
 	hud_bg.color = Color(0.05, 0.08, 0.11, 0.78)
 	_hud_root.add_child(hud_bg)
 
 	_tick_label = Label.new()
 	_tick_label.name = "TickLabel"
 	_tick_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tick_label.position = Vector2(20, 20)
+	_tick_label.position = Vector2(20, HUD_BG_TOP + 2.0)
+	_tick_label.custom_minimum_size = Vector2(180, HUD_BG_HEIGHT - 4.0)
 	_tick_label.text = "第0帧"
 	_tick_label.add_theme_font_size_override("font_size", FONT_SIZE_HUD_TICK)
 	_hud_root.add_child(_tick_label)
@@ -716,9 +882,9 @@ func _ensure_hud() -> void:
 	_event_label = Label.new()
 	_event_label.name = "EventLabel"
 	_event_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_event_label.position = Vector2(24, 72)
-	_event_label.custom_minimum_size = Vector2(1360, 42)
-	_event_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_event_label.position = Vector2(220, HUD_BG_TOP + 8.0)
+	_event_label.custom_minimum_size = Vector2(700, HUD_BG_HEIGHT - 8.0)
+	_event_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_event_label.add_theme_font_size_override("font_size", FONT_SIZE_HUD_EVENT)
 	_event_label.text = ""
 	_hud_root.add_child(_event_label)
@@ -726,12 +892,27 @@ func _ensure_hud() -> void:
 	_strategy_cast_label = Label.new()
 	_strategy_cast_label.name = "StrategyCastLabel"
 	_strategy_cast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_strategy_cast_label.position = Vector2(24, 114)
-	_strategy_cast_label.custom_minimum_size = Vector2(1360, 42)
-	_strategy_cast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_strategy_cast_label.position = Vector2(940, HUD_BG_TOP + 8.0)
+	_strategy_cast_label.custom_minimum_size = Vector2(460, HUD_BG_HEIGHT - 8.0)
+	_strategy_cast_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_strategy_cast_label.add_theme_font_size_override("font_size", FONT_SIZE_HUD_EVENT)
 	_strategy_cast_label.text = ""
 	_hud_root.add_child(_strategy_cast_label)
+
+	_strategy_name_popup_label = Label.new()
+	_strategy_name_popup_label.name = "StrategyNamePopupLabel"
+	_strategy_name_popup_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_strategy_name_popup_label.position = Vector2(540, HUD_BG_TOP + HUD_BG_HEIGHT + 12.0)
+	_strategy_name_popup_label.custom_minimum_size = Vector2(460, 64)
+	_strategy_name_popup_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_strategy_name_popup_label.add_theme_font_size_override("font_size", FONT_SIZE_STRATEGY_POPUP)
+	_strategy_name_popup_label.add_theme_color_override("font_color", Color(0.95, 0.99, 1.0, 1.0))
+	_strategy_name_popup_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.72))
+	_strategy_name_popup_label.add_theme_constant_override("shadow_offset_x", 1)
+	_strategy_name_popup_label.add_theme_constant_override("shadow_offset_y", 2)
+	_strategy_name_popup_label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	_strategy_name_popup_label.text = ""
+	_hud_root.add_child(_strategy_name_popup_label)
 
 
 func _ensure_map() -> void:
@@ -748,6 +929,443 @@ func _ensure_map() -> void:
 	_battle_map.set_anchors_preset(Control.PRESET_FULL_RECT)
 	battlefield_panel.add_child(_battle_map)
 	battlefield_panel.move_child(_battle_map, 0)
+
+
+func _ensure_combat_line_overlay() -> void:
+	if _line_overlay != null:
+		if _line_overlay.get_parent() != self:
+			_line_overlay.reparent(self)
+		_line_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		return
+	_line_overlay = COMBAT_LINE_OVERLAY.new()
+	_line_overlay.name = "CombatLineOverlay"
+	_line_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_line_overlay.z_index = 40
+	_line_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_line_overlay)
+
+
+func _refresh_combat_line_overlay() -> void:
+	_ensure_combat_line_overlay()
+	_combat_lines = _build_combat_lines(_display_tick())
+	if _line_overlay != null and _line_overlay.has_method("set_lines"):
+		_line_overlay.call("set_lines", _combat_lines)
+
+
+func _refresh_strategy_cast_fx(tick: int) -> void:
+	_refresh_strategy_name_popup(tick)
+	_refresh_strategy_screen_flash(tick)
+
+
+func _refresh_strategy_name_popup(tick: int) -> void:
+	if _strategy_name_popup_label == null:
+		return
+	var popup := _strategy_popup_state_for_tick(tick)
+	var alpha := float(popup.get("alpha", 0.0))
+	if alpha <= 0.001:
+		_strategy_name_popup_label.text = ""
+		_strategy_name_popup_label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		_strategy_name_popup_label.scale = Vector2.ONE
+		return
+	_strategy_name_popup_label.text = String(popup.get("text", ""))
+	var scale_factor := float(popup.get("scale", 1.0))
+	_strategy_name_popup_label.scale = Vector2(scale_factor, scale_factor)
+	_strategy_name_popup_label.pivot_offset = _strategy_name_popup_label.size * 0.5
+	_strategy_name_popup_label.modulate = Color(1.0, 1.0, 1.0, alpha)
+
+
+func _refresh_strategy_screen_flash(tick: int) -> void:
+	if _screen_flash_rect == null:
+		return
+	var alpha := _strategy_screen_flash_alpha(tick)
+	_screen_flash_rect.color = Color(0.78, 0.90, 1.0, alpha)
+
+
+func _build_combat_lines(tick: int) -> Array:
+	var lines: Array = []
+	lines.append_array(_build_attack_lines_with_linger())
+	lines.append_array(_build_strategy_lines_with_linger(tick))
+	lines.append_array(_build_event_response_indicator_lines_with_linger(tick))
+	return lines
+
+
+func _build_event_response_indicator_lines_with_linger(tick: int) -> Array:
+	if _event_rows.is_empty():
+		return []
+	var lines: Array = []
+	for age in range(EVENT_RESPONSE_INDICATOR_LINGER_TICKS):
+		var target_tick := tick - age
+		var alpha := 1.0 - (float(age) / float(EVENT_RESPONSE_INDICATOR_LINGER_TICKS))
+		var life_t := float(age) / float(maxi(1, EVENT_RESPONSE_INDICATOR_LINGER_TICKS - 1))
+		lines.append_array(_build_event_response_indicator_lines_for_tick(target_tick, alpha, life_t))
+	return lines
+
+
+func _build_event_response_indicator_lines_for_tick(target_tick: int, alpha: float, life_t: float) -> Array:
+	var rows: Array = []
+	for row in _event_rows:
+		if int(row.get("tick", -1)) != target_tick:
+			continue
+		if str(row.get("type", "")) != "event_resolve":
+			continue
+		if not bool(row.get("responded", false)):
+			continue
+		var anchor := _event_response_indicator_anchor_in_overlay()
+		if anchor == Vector2.ZERO:
+			continue
+		var half := 46.0 + alpha * 32.0
+		var from := anchor + Vector2(-half, 0.0)
+		var to := anchor + Vector2(half, 0.0)
+		var color := Color(0.40, 1.0, 0.86, 0.96)
+		color.a *= 0.48 + alpha * 0.52
+		rows.append({
+			"kind": "event_response_indicator",
+			"variant": "seal_x",
+			"from": from,
+			"to": to,
+			"color": color,
+			"width": 2.6 + alpha * 3.4,
+			"phase": float((target_tick + 5) % 9) * 0.11,
+			"pulse_speed": 1.2 + alpha * 1.5,
+			"life_t": life_t
+		})
+	return rows
+
+
+func _event_response_indicator_anchor_in_overlay() -> Vector2:
+	var enemy_centers: Array[Vector2] = []
+	for entity in _current_entities:
+		if not bool(entity.get("alive", false)):
+			continue
+		if str(entity.get("side", "")) != "enemy":
+			continue
+		var center := _token_center_in_overlay(str(entity.get("entity_id", "")))
+		if center == Vector2.ZERO:
+			continue
+		enemy_centers.append(center)
+	if not enemy_centers.is_empty():
+		var sum := Vector2.ZERO
+		for center in enemy_centers:
+			sum += center
+		return sum / float(enemy_centers.size())
+	var battlefield_panel := _battlefield_panel_host()
+	if battlefield_panel == null:
+		return Vector2.ZERO
+	var rect := battlefield_panel.get_global_rect()
+	if rect.size.x <= 1.0 or rect.size.y <= 1.0:
+		return Vector2.ZERO
+	var global_anchor := rect.position + Vector2(rect.size.x * 0.78, rect.size.y * 0.42)
+	return _overlay_point_from_global(global_anchor)
+
+
+func _build_attack_lines_with_linger() -> Array:
+	if _current_frame_index <= 0:
+		return []
+	var lines: Array = []
+	for age in range(ATTACK_LINE_LINGER_FRAMES):
+		var frame_index := _current_frame_index - age
+		if frame_index <= 0:
+			break
+		var alpha := 1.0 - (float(age) / float(ATTACK_LINE_LINGER_FRAMES))
+		var life_t := float(age) / float(maxi(1, ATTACK_LINE_LINGER_FRAMES - 1))
+		lines.append_array(_build_attack_lines_for_frame(frame_index, alpha, life_t))
+	return lines
+
+
+func _build_attack_lines_for_frame(frame_index: int, alpha: float, life_t: float) -> Array:
+	var prev_lookup := _entities_lookup_for_frame_index(frame_index - 1)
+	if prev_lookup.is_empty():
+		return []
+	var frame_lookup := _entities_lookup_for_frame_index(frame_index)
+	var lines_from_attacker := _build_attack_lines_from_attacker_transitions(prev_lookup, frame_lookup, frame_index, alpha, life_t)
+	if not lines_from_attacker.is_empty():
+		return lines_from_attacker
+	var lines: Array = []
+	for entity_id in prev_lookup.keys():
+		var previous := prev_lookup[entity_id] as Dictionary
+		var current := frame_lookup.get(entity_id, previous) as Dictionary
+		var hp_prev := float(previous.get("hp", 0.0))
+		var hp_now := float(current.get("hp", hp_prev))
+		if hp_now >= hp_prev - 0.01:
+			continue
+		var attacker_id := _infer_attacker_for_target(previous, prev_lookup)
+		if attacker_id.is_empty():
+			continue
+		var from := _token_center_in_overlay(attacker_id)
+		var to := _token_center_in_overlay(str(entity_id))
+		if from == Vector2.ZERO or to == Vector2.ZERO:
+			continue
+		var color := _attack_line_color(str((prev_lookup[attacker_id] as Dictionary).get("side", "")))
+		color.a *= 0.35 + alpha * 0.65
+		lines.append({
+			"kind": "attack",
+			"from": from,
+			"to": to,
+			"color": color,
+			"width": 1.8 + alpha * 2.2,
+			"phase": float(frame_index % 11) * 0.07,
+			"pulse_speed": 1.0 + alpha * 1.2,
+			"life_t": life_t
+		})
+	return lines
+
+
+func _build_attack_lines_from_attacker_transitions(prev_lookup: Dictionary, frame_lookup: Dictionary, frame_index: int, alpha: float, life_t: float) -> Array:
+	var lines: Array = []
+	for entity_id in prev_lookup.keys():
+		var previous := prev_lookup[entity_id] as Dictionary
+		var current := frame_lookup.get(entity_id, previous) as Dictionary
+		if not _did_attack_this_frame(previous, current):
+			continue
+		if not bool(previous.get("alive", false)):
+			continue
+		var attacker_side := str(previous.get("side", ""))
+		if attacker_side.is_empty():
+			continue
+		var target_id := _nearest_opponent_entity_id(previous, prev_lookup)
+		if target_id.is_empty():
+			continue
+		var from := _token_center_in_overlay(str(entity_id))
+		var to := _token_center_in_overlay(target_id)
+		if from == Vector2.ZERO or to == Vector2.ZERO:
+			continue
+		var color := _attack_line_color(attacker_side)
+		color.a *= 0.35 + alpha * 0.65
+		lines.append({
+			"kind": "attack",
+			"from": from,
+			"to": to,
+			"color": color,
+			"width": 1.8 + alpha * 2.2,
+			"phase": float((frame_index + str(entity_id).length()) % 11) * 0.07,
+			"pulse_speed": 1.0 + alpha * 1.2,
+			"life_t": life_t
+		})
+	return lines
+
+
+func _did_attack_this_frame(previous: Dictionary, current: Dictionary) -> bool:
+	if not previous.has("attack_cooldown_ticks") or not current.has("attack_cooldown_ticks"):
+		return false
+	var previous_cooldown := int(previous.get("attack_cooldown_ticks", -1))
+	var current_cooldown := int(current.get("attack_cooldown_ticks", -1))
+	return previous_cooldown <= 0 and current_cooldown > 0
+
+
+func _nearest_opponent_entity_id(attacker: Dictionary, lookup: Dictionary) -> String:
+	var attacker_side := str(attacker.get("side", ""))
+	var attacker_pos := _entity_position(attacker)
+	var best_id := ""
+	var best_distance := INF
+	for entity_id in lookup.keys():
+		var target := lookup[entity_id] as Dictionary
+		if not bool(target.get("alive", false)):
+			continue
+		if _is_same_team_side(attacker_side, str(target.get("side", ""))):
+			continue
+		var distance := attacker_pos.distance_to(_entity_position(target))
+		if distance >= best_distance:
+			continue
+		best_distance = distance
+		best_id = str(entity_id)
+	return best_id
+
+
+func _build_strategy_lines_with_linger(tick: int) -> Array:
+	if _event_rows.is_empty():
+		return []
+	var lines: Array = []
+	for age in range(STRATEGY_LINE_LINGER_FRAMES):
+		var target_tick := tick - age
+		var alpha := 1.0 - (float(age) / float(STRATEGY_LINE_LINGER_FRAMES))
+		var life_t := float(age) / float(maxi(1, STRATEGY_LINE_LINGER_FRAMES - 1))
+		lines.append_array(_build_strategy_lines_for_tick(target_tick, alpha, life_t))
+	return lines
+
+
+func _build_strategy_lines_for_tick(tick: int, alpha: float, life_t: float) -> Array:
+	if _event_rows.is_empty():
+		return []
+	var lines: Array = []
+	for row in _event_rows:
+		if int(row.get("tick", -1)) != tick:
+			continue
+		if str(row.get("type", "")) != "strategy_cast":
+			continue
+		var strategy_id := str(row.get("strategy_id", ""))
+		if strategy_id.is_empty():
+			continue
+		var origin := _strategy_card_center_in_overlay(strategy_id)
+		if origin == Vector2.ZERO:
+			continue
+		for target_id in _strategy_target_entity_ids(strategy_id):
+			var target := _token_center_in_overlay(target_id)
+			if target == Vector2.ZERO:
+				continue
+			var color := Color(0.45, 0.82, 1.0, 0.92)
+			color.a *= 0.30 + alpha * 0.70
+			var strategy_highlight_alpha := _strategy_highlight_alpha_for_tick(tick)
+			lines.append({
+				"kind": "strategy",
+				"from": origin,
+				"to": target,
+				"color": color,
+				"width": 2.2 + alpha * 2.8,
+				"phase": float((tick + target_id.length()) % 9) * 0.09,
+				"pulse_speed": 1.3 + alpha * 1.4,
+				"life_t": life_t,
+				"origin_pulse_alpha": strategy_highlight_alpha
+			})
+	return lines
+
+
+func _attack_line_color(side: String) -> Color:
+	if side == "enemy":
+		return Color(0.93, 0.38, 0.38, 0.86)
+	return Color(0.45, 0.78, 1.0, 0.86)
+
+
+func _strategy_target_entity_ids(strategy_id: String) -> Array[String]:
+	var targets: Array[String] = []
+	var effect_type := str(_strategy_panel_effect_type_by_id.get(strategy_id, ""))
+	if effect_type == "enemy_group_slow":
+		return _alive_entity_ids(true)
+	if effect_type == "enemy_front_nuke":
+		var front_enemy := _front_alive_enemy_entity_id()
+		if not front_enemy.is_empty():
+			targets.append(front_enemy)
+		return targets
+	if effect_type == "ally_tag_attack_shift":
+		return _alive_entity_ids(false)
+	return _alive_entity_ids(true)
+
+
+func _front_alive_enemy_entity_id() -> String:
+	var best_id := ""
+	var best_x := INF
+	for entity in _current_entities:
+		if not bool(entity.get("alive", false)):
+			continue
+		if str(entity.get("side", "")) != "enemy":
+			continue
+		var pos := _entity_position(entity)
+		if pos.x >= best_x:
+			continue
+		best_x = pos.x
+		best_id = str(entity.get("entity_id", ""))
+	return best_id
+
+
+func _alive_entity_ids(enemy_only: bool) -> Array[String]:
+	var ids: Array[String] = []
+	for entity in _current_entities:
+		if not bool(entity.get("alive", false)):
+			continue
+		var side := str(entity.get("side", ""))
+		if enemy_only and side != "enemy":
+			continue
+		if not enemy_only and side == "enemy":
+			continue
+		var entity_id := str(entity.get("entity_id", ""))
+		if not entity_id.is_empty():
+			ids.append(entity_id)
+	return ids
+
+
+func _strategy_card_center_in_overlay(strategy_id: String) -> Vector2:
+	if _line_overlay == null:
+		return Vector2.ZERO
+	var card := _strategy_card_views.get(strategy_id, null) as Control
+	if card != null:
+		var rect := card.get_global_rect()
+		if rect.size.x > 1.0 and rect.size.y > 1.0:
+			return _overlay_point_from_global(rect.position + rect.size * 0.5)
+	var strategy_panel := get_node_or_null("LayoutRoot/LeftColumn/StrategyPanel") as Control
+	if strategy_panel == null:
+		return Vector2.ZERO
+	var fallback_rect := strategy_panel.get_global_rect()
+	if fallback_rect.size.x <= 1.0 or fallback_rect.size.y <= 1.0:
+		return Vector2.ZERO
+	return _overlay_point_from_global(fallback_rect.position + fallback_rect.size * 0.5)
+
+
+func _token_center_in_overlay(entity_id: String) -> Vector2:
+	if _line_overlay == null:
+		return Vector2.ZERO
+	var token := _token_views.get(entity_id, null) as Control
+	if token == null:
+		return Vector2.ZERO
+	var rect := token.get_global_rect()
+	return _overlay_point_from_global(rect.position + rect.size * 0.5)
+
+
+func _overlay_point_from_global(global_point: Vector2) -> Vector2:
+	if _line_overlay == null:
+		return Vector2.ZERO
+	return _line_overlay.get_global_transform_with_canvas().affine_inverse() * global_point
+
+
+func _entities_lookup_for_frame_index(frame_index: int) -> Dictionary:
+	if frame_index < 0 or frame_index >= _timeline.size():
+		return {}
+	var frame := _timeline[frame_index] as Dictionary
+	return _entity_lookup(frame.get("entities", []))
+
+
+func _entity_lookup(entities: Array) -> Dictionary:
+	var lookup: Dictionary = {}
+	for entity in entities:
+		var entity_id := str(entity.get("entity_id", ""))
+		if entity_id.is_empty():
+			continue
+		lookup[entity_id] = entity
+	return lookup
+
+
+func _infer_attacker_for_target(target: Dictionary, prev_lookup: Dictionary) -> String:
+	var target_side := str(target.get("side", ""))
+	var target_pos := _entity_position(target)
+	var strict_id := _nearest_opponent_for_target(target_side, target_pos, prev_lookup, true)
+	if not strict_id.is_empty():
+		return strict_id
+	return _nearest_opponent_for_target(target_side, target_pos, prev_lookup, false)
+
+
+func _nearest_opponent_for_target(target_side: String, target_pos: Vector2, prev_lookup: Dictionary, enforce_range: bool) -> String:
+	var best_id := ""
+	var best_distance := INF
+	for entity_id in prev_lookup.keys():
+		var candidate := prev_lookup[entity_id] as Dictionary
+		if not bool(candidate.get("alive", false)):
+			continue
+		if _is_same_team_side(target_side, str(candidate.get("side", ""))):
+			continue
+		var distance := _entity_position(candidate).distance_to(target_pos)
+		if enforce_range:
+			var attack_range := float(candidate.get("attack_range", 0.0))
+			if attack_range > 0.0 and distance > attack_range + 30.0:
+				continue
+		if distance >= best_distance:
+			continue
+		best_distance = distance
+		best_id = str(entity_id)
+	return best_id
+
+
+func _is_same_team_side(side_a: String, side_b: String) -> bool:
+	if side_a == "enemy":
+		return side_b == "enemy"
+	if side_b == "enemy":
+		return false
+	return true
+
+
+func _line_count_by_kind(kind: String) -> int:
+	var count := 0
+	for row in _combat_lines:
+		if str((row as Dictionary).get("kind", "")) == kind:
+			count += 1
+	return count
 
 
 func _layer_for_side(side: String) -> Control:
@@ -774,11 +1392,14 @@ func _ensure_strategy_card_host() -> void:
 
 
 func _battlefield_panel_host() -> Control:
-	var battlefield_panel := get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel") as Control
-	if battlefield_panel != null:
+	var battlefield_runtime := get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime") as Control
+	if battlefield_runtime != null:
 		var hint_label := get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldHint") as Label
 		if hint_label != null:
 			hint_label.visible = false
+		return battlefield_runtime
+	var battlefield_panel := get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel") as Control
+	if battlefield_panel != null:
 		return battlefield_panel
 	return self
 
@@ -807,10 +1428,31 @@ func _ensure_alive_roster_panel() -> void:
 
 
 func _build_roster_column(title: String) -> Dictionary:
+	var panel := Panel.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.12, 0.16, 0.78)
+	panel_style.border_width_left = 1
+	panel_style.border_width_top = 1
+	panel_style.border_width_right = 1
+	panel_style.border_width_bottom = 1
+	panel_style.border_color = Color(0.28, 0.4, 0.52, 0.82)
+	panel_style.corner_radius_top_left = 6
+	panel_style.corner_radius_top_right = 6
+	panel_style.corner_radius_bottom_right = 6
+	panel_style.corner_radius_bottom_left = 6
+	panel.add_theme_stylebox_override("panel", panel_style)
+
 	var column := VBoxContainer.new()
+	column.set_anchors_preset(Control.PRESET_FULL_RECT)
+	column.offset_left = 10
+	column.offset_top = 8
+	column.offset_right = -10
+	column.offset_bottom = -8
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_theme_constant_override("separation", 6)
+	column.add_theme_constant_override("separation", 8)
 	var heading := Label.new()
 	heading.text = title
 	heading.add_theme_font_size_override("font_size", FONT_SIZE_PANEL_TITLE)
@@ -822,8 +1464,9 @@ func _build_roster_column(title: String) -> Dictionary:
 	body.add_theme_font_size_override("font_size", FONT_SIZE_PANEL_BODY)
 	body.text = "暂无"
 	column.add_child(body)
+	panel.add_child(column)
 	return {
-		"column": column,
+		"column": panel,
 		"body": body
 	}
 
@@ -837,19 +1480,43 @@ func _ensure_battle_log_panel() -> void:
 	var hint_label := get_node_or_null("LayoutRoot/RightColumn/BattleLogPanel/BattleLogHint") as Label
 	if hint_label != null:
 		hint_label.visible = false
+	_battle_log_legend_label = RichTextLabel.new()
+	_battle_log_legend_label.name = "BattleLogLegend"
+	_battle_log_legend_label.bbcode_enabled = true
+	_battle_log_legend_label.fit_content = true
+	_battle_log_legend_label.scroll_active = false
+	_battle_log_legend_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_battle_log_legend_label.custom_minimum_size = Vector2(0, 42)
+	_battle_log_legend_label.add_theme_font_size_override("normal_font_size", FONT_SIZE_PANEL_BODY - 2)
+	_battle_log_legend_label.add_theme_constant_override("line_separation", 2)
+	_battle_log_legend_label.text = "[b][color=#DDE6EF]图例：[/color][/b][color=#75E7C2]绿色封印=已拦截[/color] [color=#E9EEF5]|[/color] [color=#F07F7F]红色后果=未响应入场[/color]"
+	panel.add_child(_battle_log_legend_label)
 	_battle_log_scroll = ScrollContainer.new()
 	_battle_log_scroll.name = "BattleLogScroll"
 	_battle_log_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_battle_log_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_battle_log_scroll.custom_minimum_size = Vector2(0, 180)
+	var scroll_style := StyleBoxFlat.new()
+	scroll_style.bg_color = Color(0.07, 0.1, 0.14, 0.78)
+	scroll_style.border_width_left = 1
+	scroll_style.border_width_top = 1
+	scroll_style.border_width_right = 1
+	scroll_style.border_width_bottom = 1
+	scroll_style.border_color = Color(0.34, 0.42, 0.5, 0.9)
+	scroll_style.corner_radius_top_left = 6
+	scroll_style.corner_radius_top_right = 6
+	scroll_style.corner_radius_bottom_right = 6
+	scroll_style.corner_radius_bottom_left = 6
+	_battle_log_scroll.add_theme_stylebox_override("panel", scroll_style)
 	panel.add_child(_battle_log_scroll)
 	_battle_log_text_label = RichTextLabel.new()
 	_battle_log_text_label.name = "BattleLogRichText"
-	_battle_log_text_label.bbcode_enabled = false
+	_battle_log_text_label.bbcode_enabled = true
 	_battle_log_text_label.fit_content = false
-	_battle_log_text_label.scroll_active = true
+	_battle_log_text_label.scroll_active = false
 	_battle_log_text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_battle_log_text_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_battle_log_text_label.add_theme_constant_override("line_separation", 6)
 	_battle_log_text_label.add_theme_font_size_override("normal_font_size", FONT_SIZE_PANEL_BODY)
 	_battle_log_scroll.add_child(_battle_log_text_label)
 
@@ -951,16 +1618,21 @@ func _build_event_timeline_text(markers: Array) -> String:
 
 
 func _build_strategy_cast_text(tick: int, rows: Array) -> String:
-	var strategy_ids: PackedStringArray = []
+	var strategy_lines: PackedStringArray = []
 	for row in rows:
 		if int(row.get("tick", -1)) != tick:
 			continue
 		if str(row.get("type", "")) != "strategy_cast":
 			continue
-		strategy_ids.append(_strategy_display_name(str(row.get("strategy_id", ""))))
-	if strategy_ids.is_empty():
+		var strategy_name := _strategy_display_name(str(row.get("strategy_id", "")))
+		var cast_mode := str(row.get("cast_mode", ""))
+		if cast_mode == "passive":
+			strategy_lines.append("%s（被动生效）" % strategy_name)
+		else:
+			strategy_lines.append("%s（施放）" % strategy_name)
+	if strategy_lines.is_empty():
 		return ""
-	return "战技施放：%s" % " | ".join(strategy_ids)
+	return "战技施放：%s" % " | ".join(strategy_lines)
 
 
 func _refresh_strategy_cards(tick: int) -> void:
@@ -1018,7 +1690,8 @@ func _build_strategy_card_states(tick: int) -> Array:
 			"cooldown_total_seconds": cooldown_total,
 			"cooldown_remaining_seconds": remaining,
 			"cooldown_ratio": ratio,
-			"triggered": last_cast_tick == tick
+			"triggered": last_cast_tick == tick,
+			"highlight_alpha": _strategy_highlight_alpha(tick, last_cast_tick)
 		})
 	return states
 
@@ -1054,6 +1727,7 @@ func _rebuild_strategy_card_runtime_cache(battle_setup: Dictionary, rows: Array)
 	_strategy_panel_cooldown_seconds_by_id.clear()
 	_strategy_panel_display_name_by_id.clear()
 	_strategy_cast_ticks_by_id.clear()
+	_strategy_panel_effect_type_by_id.clear()
 	if battle_setup.is_empty():
 		return
 	var content := BATTLE_CONTENT.new()
@@ -1067,6 +1741,7 @@ func _rebuild_strategy_card_runtime_cache(battle_setup: Dictionary, rows: Array)
 		var strategy_def: Dictionary = content.get_strategy(strategy_id)
 		_strategy_panel_cooldown_seconds_by_id[strategy_id] = maxf(0.0, float(strategy_def.get("cooldown", 0.0)))
 		_strategy_panel_display_name_by_id[strategy_id] = String(strategy_def.get("name", _display_name_resolver.strategy_name(strategy_id)))
+		_strategy_panel_effect_type_by_id[strategy_id] = str((strategy_def.get("effect_def", {}) as Dictionary).get("type", ""))
 	content.free()
 	for row in rows:
 		if str(row.get("type", "")) != "strategy_cast":
@@ -1123,6 +1798,108 @@ func _count_strategy_casts(rows: Array) -> int:
 		if str(row.get("type", "")) == "strategy_cast":
 			count += 1
 	return count
+
+
+func _strategy_highlight_alpha(current_tick: int, cast_tick: int) -> float:
+	if cast_tick < 0 or cast_tick > current_tick:
+		return 0.0
+	var age := current_tick - cast_tick
+	if age >= STRATEGY_HIGHLIGHT_LINGER_TICKS:
+		return 0.0
+	return clampf(1.0 - (float(age) / float(STRATEGY_HIGHLIGHT_LINGER_TICKS)), 0.0, 1.0)
+
+
+func _strategy_highlight_alpha_for_tick(cast_tick: int) -> float:
+	return _strategy_highlight_alpha(_current_tick, cast_tick)
+
+
+func _strategy_popup_state_for_tick(current_tick: int) -> Dictionary:
+	var cast := _latest_strategy_cast_snapshot(current_tick)
+	var cast_tick := int(cast.get("tick", -1))
+	if cast_tick < 0:
+		return {
+			"text": "",
+			"alpha": 0.0,
+			"scale": 1.0
+		}
+	var age := current_tick - cast_tick
+	if age < 0 or age >= STRATEGY_NAME_POPUP_LINGER_TICKS:
+		return {
+			"text": "",
+			"alpha": 0.0,
+			"scale": 1.0
+		}
+	var life_t := float(age) / float(maxi(1, STRATEGY_NAME_POPUP_LINGER_TICKS - 1))
+	var alpha := pow(1.0 - life_t, 1.55)
+	var scale_factor := 1.0 + STRATEGY_NAME_POPUP_SCALE_BOOST * (1.0 - life_t * 0.72)
+	return {
+		"text": String(cast.get("text", "")),
+		"alpha": clampf(alpha, 0.0, 1.0),
+		"scale": maxf(1.0, scale_factor)
+	}
+
+
+func _strategy_screen_flash_alpha(current_tick: int) -> float:
+	var cast := _latest_strategy_cast_snapshot(current_tick)
+	var cast_tick := int(cast.get("tick", -1))
+	if cast_tick < 0:
+		return 0.0
+	var age := current_tick - cast_tick
+	if age < 0 or age >= STRATEGY_FLASH_LINGER_TICKS:
+		return 0.0
+	var life_t := float(age) / float(maxi(1, STRATEGY_FLASH_LINGER_TICKS - 1))
+	return STRATEGY_FLASH_MAX_ALPHA * pow(1.0 - life_t, 2.0)
+
+
+func _latest_strategy_cast_snapshot(current_tick: int) -> Dictionary:
+	var latest_tick := -1
+	var names: PackedStringArray = []
+	for row in _event_rows:
+		if str(row.get("type", "")) != "strategy_cast":
+			continue
+		var tick := int(row.get("tick", -1))
+		if tick > current_tick:
+			continue
+		if tick <= latest_tick:
+			if tick == latest_tick:
+				var same_tick_name := _strategy_display_name(str(row.get("strategy_id", "")))
+				if not same_tick_name.is_empty():
+					names.append(same_tick_name)
+			continue
+		latest_tick = tick
+		names.clear()
+		var display_name := _strategy_display_name(str(row.get("strategy_id", "")))
+		if not display_name.is_empty():
+			names.append(display_name)
+	if latest_tick < 0:
+		return {"tick": -1, "text": ""}
+	if names.is_empty():
+		names.append("战技")
+	return {
+		"tick": latest_tick,
+		"text": "「%s」" % " / ".join(names)
+	}
+
+
+func _strategy_target_highlight_alpha(entity_id: String, current_tick: int) -> float:
+	if entity_id.is_empty():
+		return 0.0
+	var best_alpha := 0.0
+	for row in _event_rows:
+		if str(row.get("type", "")) != "strategy_cast":
+			continue
+		var cast_tick := int(row.get("tick", -1))
+		var alpha := _strategy_highlight_alpha(current_tick, cast_tick)
+		if alpha <= 0.0:
+			continue
+		var strategy_id := str(row.get("strategy_id", ""))
+		if strategy_id.is_empty():
+			continue
+		var target_ids := _strategy_target_entity_ids(strategy_id)
+		if not target_ids.has(entity_id):
+			continue
+		best_alpha = maxf(best_alpha, alpha)
+	return best_alpha
 
 
 func _count_alive_sides(entities: Array) -> Dictionary:
@@ -1210,6 +1987,13 @@ func _panel_entities() -> Array:
 
 func _entity_display_name(entity: Dictionary) -> String:
 	var display_name := str(entity.get("display_name", ""))
+	if not display_name.is_empty() and not display_name.begins_with("未知"):
+		return display_name
+	var unit_id := str(entity.get("unit_id", ""))
+	if not unit_id.is_empty():
+		var unit_display_name := _display_name_resolver.unit_name_from_unit_id(unit_id)
+		if not unit_display_name.begins_with("未知"):
+			return unit_display_name
 	if not display_name.is_empty():
 		return display_name
 	return _unit_display_name_from_entity_id(str(entity.get("entity_id", "")))
@@ -1233,7 +2017,8 @@ func _refresh_battle_log_panel() -> void:
 	_ensure_battle_log_panel()
 	if _battle_log_text_label == null:
 		return
-	_battle_log_text_label.text = get_battle_log_text()
+	_battle_log_text_label.clear()
+	_battle_log_text_label.append_text(_build_battle_log_rich_text())
 
 
 func _build_battle_log_lines(limit: int = 18) -> Array[String]:
@@ -1241,12 +2026,46 @@ func _build_battle_log_lines(limit: int = 18) -> Array[String]:
 	var normal_lines := _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
 	var lines: Array[String] = ["关键事件"]
 	for line in key_lines:
-		lines.append("- %s" % String(line))
+		lines.append("%s %s" % [_log_prefix_for_line(String(line)), String(line)])
 	lines.append("")
 	lines.append("普通日志")
 	for line in normal_lines:
-		lines.append("- %s" % String(line))
+		lines.append("%s %s" % [_log_prefix_for_line(String(line)), String(line)])
 	return lines
+
+
+func _build_battle_log_rich_text(limit: int = 18) -> String:
+	var key_lines := _battle_report_formatter.build_key_event_lines(_event_rows, _display_tick(), 8)
+	var normal_lines := _battle_report_formatter.build_recent_detail(_event_rows, _display_tick(), "all", limit)
+	var rows: PackedStringArray = []
+	rows.append("[b][color=#F2F5F8]关键事件[/color][/b]")
+	for line in key_lines:
+		var text := String(line)
+		rows.append("[color=%s]▌[/color] [color=#EAF0F5]%s[/color]" % [_log_color_for_line(text), text])
+	rows.append("")
+	rows.append("[b][color=#F2F5F8]普通日志[/color][/b]")
+	for line in normal_lines:
+		var text := String(line)
+		rows.append("[color=%s]▌[/color] [color=#DFE7EF]%s[/color]" % [_log_color_for_line(text), text])
+	return "\n".join(rows)
+
+
+func _log_prefix_for_line(line: String) -> String:
+	return "▌"
+
+
+func _log_color_for_line(line: String) -> String:
+	if line.find("倒下") != -1:
+		return LOG_BAR_COLOR_DOWN
+	if line.find("施放") != -1:
+		return LOG_BAR_COLOR_CAST
+	if line.find("预警") != -1 or line.find("秒后") != -1:
+		return LOG_BAR_COLOR_WARNING
+	if line.find("已响应") != -1:
+		return "#75E7C2"
+	if line.find("未响应") != -1 or line.find("关键") != -1:
+		return LOG_BAR_COLOR_KEY
+	return LOG_BAR_COLOR_DEFAULT
 
 
 func _display_tick() -> int:

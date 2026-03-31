@@ -67,6 +67,10 @@ func _run() -> void:
 	battlefield_panel.position = Vector2(80, 40)
 	battlefield_panel.size = Vector2(960, 520)
 	left_column.add_child(battlefield_panel)
+	var battlefield_runtime := Control.new()
+	battlefield_runtime.name = "BattlefieldRuntime"
+	battlefield_runtime.size = battlefield_panel.size
+	battlefield_panel.add_child(battlefield_runtime)
 	var battlefield_hint := Label.new()
 	battlefield_hint.name = "BattlefieldHint"
 	battlefield_panel.add_child(battlefield_hint)
@@ -77,15 +81,15 @@ func _run() -> void:
 	])
 	screen.update_hud_for_tick(13, [])
 	screen._ensure_map()
-	if screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/TokenHost") == null:
+	if screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/TokenHost") == null:
 		_failures.append("TokenHost should recover under BattlefieldPanel when it becomes available")
-	if screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot") == null:
+	if screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot") == null:
 		_failures.append("HudRoot should recover under BattlefieldPanel when it becomes available")
-	if screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattleMap") == null:
+	if screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/BattleMap") == null:
 		_failures.append("BattleMap should recover under BattlefieldPanel when it becomes available")
-	var recovered_token_host := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/TokenHost") as Control
-	var recovered_hud_root := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot") as Control
-	var recovered_battle_map := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattleMap") as Control
+	var recovered_token_host := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/TokenHost") as Control
+	var recovered_hud_root := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot") as Control
+	var recovered_battle_map := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/BattleMap") as Control
 	_assert_full_rect(recovered_token_host, "TokenHost")
 	_assert_full_rect(recovered_hud_root, "HudRoot")
 	_assert_full_rect(recovered_battle_map, "BattleMap")
@@ -94,6 +98,21 @@ func _run() -> void:
 			_failures.append("BattleMap should remain below TokenHost after recovery")
 		if recovered_token_host.get_index() >= recovered_hud_root.get_index():
 			_failures.append("TokenHost should remain below HudRoot after recovery")
+	var recovered_hud_bg := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot/HudBg") as ColorRect
+	var recovered_tick_label := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot/TickLabel") as Label
+	var recovered_event_label := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot/EventLabel") as Label
+	var recovered_strategy_label := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/BattlefieldRuntime/HudRoot/StrategyCastLabel") as Label
+	if recovered_hud_bg == null:
+		_failures.append("missing HudBg after recovery")
+	elif recovered_hud_bg.size.y > 80.0:
+		_failures.append("HudBg should be compact single-line height (<=80)")
+	if recovered_tick_label == null or recovered_event_label == null or recovered_strategy_label == null:
+		_failures.append("missing hud labels after recovery")
+	else:
+		if absf(recovered_event_label.position.y - recovered_strategy_label.position.y) > 4.0:
+			_failures.append("event and strategy labels should stay on one line")
+		if recovered_tick_label.position.y > recovered_event_label.position.y + 6.0:
+			_failures.append("tick label should align on one line with event labels")
 	if screen.get_node_or_null("TokenHost") != null:
 		_failures.append("TokenHost should not stay on screen root after BattlefieldPanel recovery")
 	if screen.get_node_or_null("HudRoot") != null:

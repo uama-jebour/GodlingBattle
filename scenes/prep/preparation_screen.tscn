@@ -92,14 +92,6 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 96)
 theme_override_font_sizes/font_size = 42
 
-[node name="SeedInput" type="SpinBox" parent="Layout"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 96)
-min_value = 1.0
-max_value = 999999.0
-value = 1001.0
-theme_override_font_sizes/font_size = 40
-
 [node name="StrategyList" type="VBoxContainer" parent="Layout"]
 layout_mode = 2
 size_flags_vertical = 3

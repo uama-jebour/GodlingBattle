@@ -12,7 +12,9 @@ func _run() -> void:
 	token.call("set_visual_flags", {
 		"is_hit": true,
 		"is_affected": true,
-		"is_dead": false
+		"is_dead": false,
+		"damage_value": 37,
+		"current_tick": 12
 	})
 	if not bool(token.get("is_hit")):
 		_failures.append("is_hit should be true")
@@ -20,6 +22,10 @@ func _run() -> void:
 		_failures.append("is_affected should be true")
 	if bool(token.get("is_dead")):
 		_failures.append("is_dead should be false")
+	if token.get("damage_value") != 37:
+		_failures.append("damage_value should be set from visual flags")
+	if token.get("_damage_popup_tick") != 12:
+		_failures.append("damage popup tick should track current_tick")
 
 	_finish(token)
 

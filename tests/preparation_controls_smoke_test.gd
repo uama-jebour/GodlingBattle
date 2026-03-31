@@ -16,7 +16,7 @@ func _run() -> void:
 
 	_expect_node(screen, "Layout/HeroSelect")
 	_expect_node(screen, "Layout/BattleSelect")
-	_expect_node(screen, "Layout/SeedInput")
+	_expect_node_absent(screen, "Layout/SeedInput")
 	_expect_node(screen, "Layout/StrategyList")
 
 	screen.queue_free()
@@ -27,6 +27,11 @@ func _run() -> void:
 func _expect_node(root_node: Node, path: String) -> void:
 	if root_node.get_node_or_null(path) == null:
 		_failures.append("expected node %s to exist" % path)
+
+
+func _expect_node_absent(root_node: Node, path: String) -> void:
+	if root_node.get_node_or_null(path) != null:
+		_failures.append("expected node %s to be absent" % path)
 
 
 func _finish() -> void:

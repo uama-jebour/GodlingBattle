@@ -12,7 +12,7 @@ var _units := {
 		"move_speed": 10.0,
 		"radius": 3.0,
 		"max_hp": 100.0,
-		"attack_power": 5.0,
+		"attack_power": 4.0,
 		"attack_speed": 1.5,
 		"attack_range": 4.0,
 		"tags": ["英雄", "天使"],
@@ -28,10 +28,58 @@ var _units := {
 		"move_speed": 15.0,
 		"radius": 2.0,
 		"max_hp": 20.0,
-		"attack_power": 2.0,
+		"attack_power": 1.5,
 		"attack_speed": 1.5,
 		"attack_range": 1.0,
 		"tags": ["虚无"],
+		"move_logic": "chase_nearest",
+		"combat_ai": "melee"
+	}),
+	"enemy_wandering_demon": TYPES.unit({
+		"unit_id": "enemy_wandering_demon",
+		"display_name": "游荡魔",
+		"type": "normal",
+		"move_mode": "walking",
+		"attack_mode": "melee",
+		"move_speed": 9.0,
+		"radius": 2.5,
+		"max_hp": 42.0,
+		"attack_power": 3.0,
+		"attack_speed": 1.2,
+		"attack_range": 1.0,
+		"tags": ["恶魔"],
+		"move_logic": "chase_nearest",
+		"combat_ai": "melee"
+	}),
+	"enemy_animated_machine": TYPES.unit({
+		"unit_id": "enemy_animated_machine",
+		"display_name": "活化机械",
+		"type": "normal",
+		"move_mode": "walking",
+		"attack_mode": "ranged",
+		"move_speed": 7.0,
+		"radius": 2.5,
+		"max_hp": 52.0,
+		"attack_power": 3.8,
+		"attack_speed": 1.1,
+		"attack_range": 3.8,
+		"tags": ["机械"],
+		"move_logic": "chase_nearest",
+		"combat_ai": "ranged"
+	}),
+	"enemy_hunter_fiend": TYPES.unit({
+		"unit_id": "enemy_hunter_fiend",
+		"display_name": "追猎魔",
+		"type": "elite",
+		"move_mode": "walking",
+		"attack_mode": "melee",
+		"move_speed": 10.0,
+		"radius": 3.0,
+		"max_hp": 38.0,
+		"attack_power": 4.5,
+		"attack_speed": 1.4,
+		"attack_range": 1.2,
+		"tags": ["恶魔", "召唤"],
 		"move_logic": "chase_nearest",
 		"combat_ai": "melee"
 	})
@@ -46,7 +94,7 @@ var _strategies := {
 		"cooldown": -1.0,
 		"tags": ["虚无"],
 		"trigger_def": {"type": "always_on"},
-		"effect_def": {"type": "ally_tag_attack_shift", "tag": "虚无", "bonus": 5.0, "penalty": -5.0}
+		"effect_def": {"type": "ally_tag_attack_shift", "tag": "虚无", "bonus": 3.0, "penalty": -3.0}
 	}),
 	"strat_chill_wave": TYPES.strategy({
 		"strategy_id": "strat_chill_wave",
@@ -76,7 +124,7 @@ var _strategies := {
 		"cooldown": 25.0,
 		"tags": ["爆发"],
 		"trigger_def": {"type": "cooldown"},
-		"effect_def": {"type": "enemy_front_nuke", "damage": 20.0}
+		"effect_def": {"type": "enemy_front_nuke", "damage": 14.0}
 	})
 }
 
@@ -108,8 +156,8 @@ var _events := {
 	"evt_void_collapse": TYPES.event({
 		"event_id": "evt_void_collapse",
 		"name": "虚空坍缩",
-		"trigger_def": {"type": "elapsed_gte", "value": 12.0},
-		"warning_seconds": 4.0,
+		"trigger_def": {"type": "elapsed_gte", "value": 7.0},
+		"warning_seconds": 2.0,
 		"response_tag": "崩解防护",
 		"response_level": 2,
 		"unresolved_effect_def": {"type": "void_shock", "damage": 8.0}

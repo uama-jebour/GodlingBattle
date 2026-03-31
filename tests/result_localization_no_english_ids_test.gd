@@ -72,8 +72,8 @@ func _run() -> void:
 		_failures.append("expected localized hero name in result screen")
 	if joined.find("野犬残形") == -1:
 		_failures.append("expected localized ally name in result screen")
-	if joined.find("未知敌方单位") == -1:
-		_failures.append("expected enemy entity ids to resolve through localized fallback")
+	if joined.find("游荡魔") == -1 or joined.find("活化机械") == -1:
+		_failures.append("expected enemy entity ids to resolve through localized enemy names")
 	if joined.find("核击协议") == -1:
 		_failures.append("expected localized strategy name in result screen")
 

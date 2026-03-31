@@ -27,6 +27,11 @@ func _run() -> void:
 		if strategy_chill == null:
 			_failures.append("expected strat_chill_wave checkbox")
 		if _failures.is_empty():
+			for child in (screen.get_node("Layout/StrategyList") as VBoxContainer).get_children():
+				var checkbox := child as CheckBox
+				if checkbox != null:
+					checkbox.button_pressed = false
+			await process_frame
 			strategy_void.button_pressed = true
 			strategy_chill.button_pressed = true
 			await process_frame
