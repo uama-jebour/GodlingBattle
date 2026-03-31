@@ -9,6 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+custom_minimum_size = Vector2(0, 1640)
 script = ExtResource("1")
 
 [node name="BackgroundTint" type="ColorRect" parent="."]
@@ -29,7 +30,7 @@ anchor_bottom = 1.0
 offset_left = 20.0
 offset_top = 100.0
 offset_right = -20.0
-offset_bottom = -420.0
+offset_bottom = -510.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -41,7 +42,7 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = 1030.0
+offset_top = 1120.0
 offset_right = -20.0
 offset_bottom = -180.0
 grow_horizontal = 2
@@ -55,7 +56,7 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = 1260.0
+offset_top = 1350.0
 offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 2
@@ -74,7 +75,7 @@ offset_right = -36.0
 offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 18
 
 [node name="TitleLabel" type="Label" parent="Layout"]
 layout_mode = 2
@@ -105,12 +106,13 @@ theme_override_font_sizes/font_size = 42
 [node name="ApplyPresetButton" type="Button" parent="Layout"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 84)
-text = "应用测试预设"
+text = "▶ 应用测试预设"
 theme_override_font_sizes/font_size = 34
 
 [node name="StrategyList" type="VBoxContainer" parent="Layout"]
 layout_mode = 2
-size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 420)
+size_flags_vertical = 1
 theme_override_constants/separation = 12
 
 [node name="BudgetLabel" type="Label" parent="Layout"]
