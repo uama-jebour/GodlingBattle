@@ -142,7 +142,13 @@ var _events := {
 		"warning_seconds": 5.0,
 		"response_tag": "恶魔召唤",
 		"response_level": 1,
-		"unresolved_effect_def": {"type": "summon", "unit_id": "enemy_hunter_fiend", "count": 1}
+		"unresolved_effect_def": {
+			"type": "summon",
+			"unit_id": "enemy_hunter_fiend",
+			"count": 1,
+			"spawn_anchor": "right_flank",
+			"spawn_jitter": {"x": 18.0, "y": 48.0}
+		}
 	}),
 	"evt_demon_ambush": TYPES.event({
 		"event_id": "evt_demon_ambush",
