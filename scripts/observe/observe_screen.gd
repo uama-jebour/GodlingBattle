@@ -73,6 +73,7 @@ func _ready() -> void:
 	_bind_playback_controls()
 	_bind_event_filter_controls()
 	_bind_battle_report_controls()
+	_hide_legacy_event_panel()
 	_ensure_strategy_card_host()
 	_ensure_alive_roster_panel()
 	_ensure_battle_log_panel()
@@ -126,6 +127,15 @@ func _ready() -> void:
 		var app_router := _app_router()
 		if app_router != null:
 			app_router.goto_result()
+
+
+func _hide_legacy_event_panel() -> void:
+	var event_panel := get_node_or_null("EventPanel") as Control
+	if event_panel != null:
+		event_panel.visible = false
+	var event_panel_bg := get_node_or_null("EventPanelBg") as Control
+	if event_panel_bg != null:
+		event_panel_bg.visible = false
 
 
 func _process(delta: float) -> void:

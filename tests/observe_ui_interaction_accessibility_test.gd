@@ -40,6 +40,12 @@ func _run() -> void:
 	var battlefield_panel := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel") as Control
 	if battlefield_panel == null:
 		_failures.append("missing BattlefieldPanel")
+	var legacy_event_panel := screen.get_node_or_null("EventPanel") as Control
+	if legacy_event_panel != null and legacy_event_panel.visible:
+		_failures.append("EventPanel should stay hidden in strict quadrant mode")
+	var legacy_event_panel_bg := screen.get_node_or_null("EventPanelBg") as Control
+	if legacy_event_panel_bg != null and legacy_event_panel_bg.visible:
+		_failures.append("EventPanelBg should stay hidden in strict quadrant mode")
 	var hud_root := screen.get_node_or_null("LayoutRoot/LeftColumn/BattlefieldPanel/HudRoot") as Control
 	if hud_root == null:
 		_failures.append("missing HudRoot")
