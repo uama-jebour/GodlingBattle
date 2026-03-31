@@ -92,6 +92,22 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 96)
 theme_override_font_sizes/font_size = 42
 
+[node name="AllyCountSelect" type="OptionButton" parent="Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 96)
+theme_override_font_sizes/font_size = 42
+
+[node name="TestPresetSelect" type="OptionButton" parent="Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 96)
+theme_override_font_sizes/font_size = 42
+
+[node name="ApplyPresetButton" type="Button" parent="Layout"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 84)
+text = "应用测试预设"
+theme_override_font_sizes/font_size = 34
+
 [node name="StrategyList" type="VBoxContainer" parent="Layout"]
 layout_mode = 2
 size_flags_vertical = 3

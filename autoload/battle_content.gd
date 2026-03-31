@@ -222,6 +222,14 @@ func get_battle(battle_id: String) -> Dictionary:
 	return _battles.get(battle_id, {}).duplicate(true)
 
 
+func get_all_battle_ids() -> Array[String]:
+	var battle_ids: Array[String] = []
+	for battle_id in _battles.keys():
+		battle_ids.append(String(battle_id))
+	battle_ids.sort()
+	return battle_ids
+
+
 func get_test_packs() -> Array:
 	return [
 		{

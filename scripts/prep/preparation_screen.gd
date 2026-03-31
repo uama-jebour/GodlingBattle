@@ -7,6 +7,13 @@ const MIN_ALLY_COUNT := 0
 const MAX_ALLY_COUNT := 8
 const DEFAULT_STRATEGY_SELECTED_COUNT := 4
 const STRATEGY_CHECK_ICON_SIZE := 40
+const ALLY_COUNT_OPTIONS := [0, 2, 3]
+const PRESET_NONE := "preset_none"
+const PRESET_1_1_BASELINE := "preset_1_1_baseline"
+const PRESET_1_2_HERO_ONLY_ACTIVE := "preset_1_2_hero_only_active"
+const PRESET_1_3_EVENT_NO_COUNTER := "preset_1_3_event_no_counter"
+const PRESET_1_3_EVENT_WITH_COUNTER := "preset_1_3_event_with_counter"
+const DEFAULT_ALLY_UNIT_ID := "ally_hound_remnant"
 
 var _current_selection: Dictionary = {
 	"hero_id": "hero_angel",
@@ -21,6 +28,9 @@ var _strategy_checkboxes: Dictionary = {}
 @onready var title_label: Label = $Layout/TitleLabel
 @onready var hero_select: OptionButton = $Layout/HeroSelect
 @onready var battle_select: OptionButton = $Layout/BattleSelect
+@onready var ally_count_select: OptionButton = $Layout/AllyCountSelect
+@onready var test_preset_select: OptionButton = $Layout/TestPresetSelect
+@onready var apply_preset_button: Button = $Layout/ApplyPresetButton
 @onready var strategy_list: VBoxContainer = $Layout/StrategyList
 @onready var budget_label: Label = $Layout/BudgetLabel
 @onready var selection_summary: Label = $Layout/SelectionSummary
@@ -54,9 +64,14 @@ func _bind_content_options() -> void:
 	hero_select.add_item("英雄：%s" % String(hero.get("display_name", "天使")), 0)
 	hero_select.set_item_metadata(0, "hero_angel")
 	battle_select.clear()
-	var battle: Dictionary = content.get_battle("battle_void_gate_alpha")
-	battle_select.add_item("关卡：%s" % String(battle.get("display_name", "虚无裂隙·一层")), 0)
-	battle_select.set_item_metadata(0, "battle_void_gate_alpha")
+	var battle_ids: Array[String] = content.get_all_battle_ids()
+	for index in range(battle_ids.size()):
+		var battle_id := battle_ids[index]
+		var battle: Dictionary = content.get_battle(battle_id)
+		battle_select.add_item("关卡：%s" % String(battle.get("display_name", battle_id)), index)
+		battle_select.set_item_metadata(index, battle_id)
+	_rebuild_ally_count_options()
+	_rebuild_test_preset_options()
 	_rebuild_strategy_options(content)
 	_apply_default_strategy_selection_if_needed(content)
 	content.free()
@@ -93,12 +108,17 @@ func _bind_control_events() -> void:
 		hero_select.item_selected.connect(_on_control_changed)
 	if not battle_select.item_selected.is_connected(_on_control_changed):
 		battle_select.item_selected.connect(_on_control_changed)
+	if not ally_count_select.item_selected.is_connected(_on_control_changed):
+		ally_count_select.item_selected.connect(_on_control_changed)
+	if not apply_preset_button.pressed.is_connected(_on_apply_preset_pressed):
+		apply_preset_button.pressed.connect(_on_apply_preset_pressed)
 
 
 func _apply_selection_to_controls() -> void:
 	_is_syncing_controls = true
 	_select_option_by_metadata(hero_select, String(_current_selection.get("hero_id", "")))
 	_select_option_by_metadata(battle_select, String(_current_selection.get("battle_id", "")))
+	_select_option_by_metadata(ally_count_select, "ally_count_%d" % int((_current_selection.get("ally_ids", []) as Array).size()))
 	var strategy_ids: Array = _current_selection.get("strategy_ids", [])
 	for strategy_id in _strategy_checkboxes.keys():
 		var checkbox := _strategy_checkboxes[strategy_id] as CheckBox
@@ -116,9 +136,8 @@ func _pull_selection_from_controls() -> void:
 			continue
 		if checkbox.button_pressed:
 			strategy_ids.append(strategy_id)
-	var ally_ids: Array = _current_selection.get("ally_ids", [])
-	if ally_ids.size() != DEFAULT_ALLY_IDS.size():
-		ally_ids = DEFAULT_ALLY_IDS.duplicate()
+	var ally_count := _selected_ally_count()
+	var ally_ids := _ally_ids_for_count(ally_count)
 	_current_selection = {
 		"hero_id": _selected_metadata(hero_select, "hero_angel"),
 		"ally_ids": ally_ids.duplicate(),
@@ -364,6 +383,14 @@ func _apply_control_visual_emphasis() -> void:
 
 	_apply_option_button_style(hero_select, normal_style, hover_style, press_style, focus_style)
 	_apply_option_button_style(battle_select, normal_style, hover_style, press_style, focus_style)
+	_apply_option_button_style(ally_count_select, normal_style, hover_style, press_style, focus_style)
+	_apply_option_button_style(test_preset_select, normal_style, hover_style, press_style, focus_style)
+	apply_preset_button.add_theme_font_size_override("font_size", 34)
+	apply_preset_button.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96))
+	apply_preset_button.add_theme_stylebox_override("normal", normal_style.duplicate())
+	apply_preset_button.add_theme_stylebox_override("hover", hover_style.duplicate())
+	apply_preset_button.add_theme_stylebox_override("pressed", press_style.duplicate())
+	apply_preset_button.add_theme_stylebox_override("focus", focus_style.duplicate())
 
 func _apply_option_button_style(option_button: OptionButton, normal_style: StyleBoxFlat, hover_style: StyleBoxFlat, press_style: StyleBoxFlat, focus_style: StyleBoxFlat) -> void:
 	option_button.add_theme_font_size_override("font_size", 42)
@@ -448,7 +475,7 @@ func _describe_invalid_reason(invalid_reason: String) -> String:
 		"missing_hero":
 			return "请选择英雄"
 		"invalid_ally_count":
-			return "队友数量需要为 3"
+			return "队友数量需在 0 到 8 之间"
 		"missing_ally":
 			return "存在无效队友"
 		"missing_strategy":
@@ -463,6 +490,90 @@ func _describe_invalid_reason(invalid_reason: String) -> String:
 
 func _on_start_pressed() -> void:
 	start_battle(_current_selection)
+
+
+func _on_apply_preset_pressed() -> void:
+	var preset_id := _selected_metadata(test_preset_select, PRESET_NONE)
+	_apply_test_preset(preset_id)
+	_apply_selection_to_controls()
+	_render_shell()
+
+
+func _rebuild_ally_count_options() -> void:
+	ally_count_select.clear()
+	for index in range(ALLY_COUNT_OPTIONS.size()):
+		var ally_count := int(ALLY_COUNT_OPTIONS[index])
+		ally_count_select.add_item("友军数量：%d" % ally_count, index)
+		ally_count_select.set_item_metadata(index, "ally_count_%d" % ally_count)
+
+
+func _selected_ally_count() -> int:
+	var metadata := _selected_metadata(ally_count_select, "ally_count_%d" % DEFAULT_ALLY_IDS.size())
+	if metadata.begins_with("ally_count_"):
+		var suffix := metadata.trim_prefix("ally_count_")
+		if suffix.is_valid_int():
+			return int(suffix)
+	return DEFAULT_ALLY_IDS.size()
+
+
+func _ally_ids_for_count(ally_count: int) -> Array[String]:
+	var count := clampi(ally_count, MIN_ALLY_COUNT, MAX_ALLY_COUNT)
+	var ally_ids: Array[String] = []
+	for _i in range(count):
+		ally_ids.append(DEFAULT_ALLY_UNIT_ID)
+	return ally_ids
+
+
+func _rebuild_test_preset_options() -> void:
+	test_preset_select.clear()
+	_add_test_preset_option(0, "测试预设：手动配置", PRESET_NONE)
+	_add_test_preset_option(1, "测试预设：1.1 初始测试", PRESET_1_1_BASELINE)
+	_add_test_preset_option(2, "测试预设：1.2 英雄孤立", PRESET_1_2_HERO_ONLY_ACTIVE)
+	_add_test_preset_option(3, "测试预设：1.3 反应（无反制）", PRESET_1_3_EVENT_NO_COUNTER)
+	_add_test_preset_option(4, "测试预设：1.3 反应（有反制）", PRESET_1_3_EVENT_WITH_COUNTER)
+
+
+func _add_test_preset_option(index: int, text: String, metadata: String) -> void:
+	test_preset_select.add_item(text, index)
+	test_preset_select.set_item_metadata(index, metadata)
+
+
+func _apply_test_preset(preset_id: String) -> void:
+	match preset_id:
+		PRESET_1_1_BASELINE:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"strategy_ids": [],
+				"battle_id": "battle_void_gate_test_baseline"
+			}
+		PRESET_1_2_HERO_ONLY_ACTIVE:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(0),
+				"strategy_ids": ["strat_chill_wave"],
+				"battle_id": "battle_void_gate_test_baseline"
+			}
+		PRESET_1_3_EVENT_NO_COUNTER:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"strategy_ids": ["strat_void_echo"],
+				"battle_id": "battle_void_gate_alpha"
+			}
+		PRESET_1_3_EVENT_WITH_COUNTER:
+			_current_selection = {
+				"hero_id": "hero_angel",
+				"ally_ids": _ally_ids_for_count(2),
+				"strategy_ids": ["strat_counter_demon_summon"],
+				"battle_id": "battle_void_gate_alpha"
+			}
+		_:
+			pass
+
+
+func get_current_selection() -> Dictionary:
+	return _current_selection.duplicate(true)
 
 
 func _session_state() -> Node:

@@ -16,6 +16,9 @@ func _run() -> void:
 
 	_expect_node(screen, "Layout/HeroSelect")
 	_expect_node(screen, "Layout/BattleSelect")
+	_expect_node(screen, "Layout/AllyCountSelect")
+	_expect_node(screen, "Layout/TestPresetSelect")
+	_expect_node(screen, "Layout/ApplyPresetButton")
 	_expect_node_absent(screen, "Layout/SeedInput")
 	_expect_node(screen, "Layout/StrategyList")
 
