@@ -334,6 +334,8 @@ func apply_timeline_frame(frame: Dictionary) -> void:
 func build_token_snapshot() -> Array:
 	var rows: Array = []
 	for entity in _current_entities:
+		if not _should_render_entity(entity):
+			continue
 		rows.append({
 			"entity_id": str(entity.get("entity_id", "")),
 			"display_name": str(entity.get("display_name", "")),
@@ -343,6 +345,17 @@ func build_token_snapshot() -> Array:
 			"visual_flags": _build_visual_flags(entity)
 		})
 	return _battlefield_layout_solver.resolve(rows, _battlefield_bounds())
+
+
+func _should_render_entity(entity: Dictionary) -> bool:
+	var entity_id := str(entity.get("entity_id", ""))
+	if entity_id.is_empty():
+		return false
+	if bool(entity.get("alive", false)):
+		_death_marker_until_tick.erase(entity_id)
+		return true
+	var expiry_tick := _death_marker_expiry_tick(entity_id, true)
+	return expiry_tick >= 0 and _current_tick <= expiry_tick
 
 
 func advance_playback_step() -> bool:
