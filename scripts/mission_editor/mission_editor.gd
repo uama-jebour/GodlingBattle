@@ -265,8 +265,9 @@ func _populate_enemy_list() -> void:
 	var enemy_ids := ["enemy_wandering_demon", "enemy_animated_machine", "enemy_hunter_fiend"]
 
 	for enemy_id in enemy_ids:
-		# Use BattleContent autoload singleton directly
-		var enemy: Dictionary = BattleContent.get_unit(enemy_id)
+		var content := BATTLE_CONTENT.new()
+		var enemy: Dictionary = content.get_unit(enemy_id)
+		content.free()
 		if enemy.is_empty():
 			continue
 
