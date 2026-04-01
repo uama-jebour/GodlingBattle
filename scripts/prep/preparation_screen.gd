@@ -51,6 +51,7 @@ var _strategy_checkboxes: Dictionary = {}
 @onready var battle_summary: Label = $ScrollContainer/Layout/BattleSummary
 @onready var error_label: Label = $ScrollContainer/Layout/ErrorLabel
 @onready var start_battle_button: Button = $ScrollContainer/Layout/StartBattleButton
+@onready var mission_editor_button: Button = $MissionEditorButton
 
 
 func _ready() -> void:
@@ -61,6 +62,8 @@ func _ready() -> void:
 	_apply_selection_to_controls()
 	if not start_battle_button.pressed.is_connected(_on_start_pressed):
 		start_battle_button.pressed.connect(_on_start_pressed)
+	if mission_editor_button and not mission_editor_button.pressed.is_connected(_on_mission_editor_pressed):
+		mission_editor_button.pressed.connect(_on_mission_editor_pressed)
 	_render_shell()
 
 
@@ -531,6 +534,12 @@ func _describe_invalid_reason(invalid_reason: String) -> String:
 
 func _on_start_pressed() -> void:
 	start_battle(_current_selection)
+
+
+func _on_mission_editor_pressed() -> void:
+	var router := get_node_or_null("/root/AppRouter")
+	if router:
+		router.goto_mission_editor()
 
 
 func _on_apply_preset_pressed() -> void:

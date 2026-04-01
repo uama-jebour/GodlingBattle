@@ -20,28 +20,28 @@ const TRIGGER_PRESETS := {
 const SPAWN_ANCHORS := ["right_flank", "right_top", "right_bottom", "left_flank", "left_top", "left_bottom"]
 
 # 元数据
-var mission_id: String = ""
-var mission_name: String = ""
-var mission_type: String = "主线"
-var briefing: String = ""
-var hint: String = ""
+@export var mission_id: String = ""
+@export var mission_name: String = ""
+@export var mission_type: String = "主线"
+@export var briefing: String = ""
+@export var hint: String = ""
 
 # 剧情（逐行）
-var pre_battle_lines: Array[String] = []
-var post_battle_lines: Array[String] = []
+@export var pre_battle_lines: Array[String] = []
+@export var post_battle_lines: Array[String] = []
 
 # 战斗配置
-var battle_id: String = ""
-var enemy_entries: Array[Dictionary] = []  # [{unit_id: "", spawn_anchor: ""}]
-var event_configs: Array[Dictionary] = []   # [{event_id: "", trigger_preset: "", spawn_anchor: ""}]
+@export var battle_id: String = ""
+@export var enemy_entries: Array[Dictionary] = []
+@export var event_configs: Array[Dictionary] = []
 
 # 收益
-var rewards: Array[Dictionary] = []  # [{type: "", value: 0}]
+@export var rewards: Array[Dictionary] = []
 
 
 func new_mission() -> void:
-    mission_id = ""
-    mission_name = ""
+    mission_id = "mission_%d" % Time.get_unix_time_from_system()
+    mission_name = "新任务"
     mission_type = "主线"
     briefing = ""
     hint = ""
@@ -58,6 +58,9 @@ func get_enemy_count() -> int:
 
 
 func add_enemy_entry(unit_id: String, spawn_anchor: String) -> void:
+    if not SPAWN_ANCHORS.has(spawn_anchor):
+        push_warning("MissionData: Invalid spawn_anchor '%s', expected one of %s" % [spawn_anchor, SPAWN_ANCHORS])
+        return
     enemy_entries.append({"unit_id": unit_id, "spawn_anchor": spawn_anchor})
 
 
@@ -67,6 +70,9 @@ func remove_enemy_entry(index: int) -> void:
 
 
 func add_event_config(event_id: String, trigger_preset: String, spawn_anchor: String) -> void:
+    if not TRIGGER_PRESETS.has(trigger_preset):
+        push_warning("MissionData: Invalid trigger_preset '%s', expected one of %s" % [trigger_preset, TRIGGER_PRESETS.keys()])
+        return
     event_configs.append({"event_id": event_id, "trigger_preset": trigger_preset, "spawn_anchor": spawn_anchor})
 
 
@@ -85,12 +91,4 @@ func remove_reward(index: int) -> void:
 
 
 func is_valid() -> bool:
-    if mission_id.is_empty():
-        return false
-    if mission_name.is_empty():
-        return false
-    if battle_id.is_empty():
-        return false
-    if enemy_entries.is_empty():
-        return false
-    return true
+    return mission_id != "" and mission_name != ""
