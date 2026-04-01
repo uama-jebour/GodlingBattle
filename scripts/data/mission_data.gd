@@ -20,23 +20,23 @@ const TRIGGER_PRESETS := {
 const SPAWN_ANCHORS := ["right_flank", "right_top", "right_bottom", "left_flank", "left_top", "left_bottom"]
 
 # 元数据
-var mission_id: String = ""
-var mission_name: String = ""
-var mission_type: String = "主线"
-var briefing: String = ""
-var hint: String = ""
+@export var mission_id: String = ""
+@export var mission_name: String = ""
+@export var mission_type: String = "主线"
+@export var briefing: String = ""
+@export var hint: String = ""
 
 # 剧情（逐行）
-var pre_battle_lines: Array[String] = []
-var post_battle_lines: Array[String] = []
+@export var pre_battle_lines: Array[String] = []
+@export var post_battle_lines: Array[String] = []
 
 # 战斗配置
-var battle_id: String = ""
-var enemy_entries: Array[Dictionary] = []
-var event_configs: Array[Dictionary] = []
+@export var battle_id: String = ""
+@export var enemy_entries: Array[Dictionary] = []
+@export var event_configs: Array[Dictionary] = []
 
 # 收益
-var rewards: Array[Dictionary] = []
+@export var rewards: Array[Dictionary] = []
 
 
 func new_mission() -> void:
