@@ -30,6 +30,13 @@ var _is_new_mission: bool = true
 var _pre_battle_line_editors: Array[LineEdit] = []
 var _post_battle_line_editors: Array[LineEdit] = []
 
+# Battle tab
+@onready var enemy_list_container: VBoxContainer = $TabContainer/BattleTab/EnemyListContainer
+@onready var battlefield_container: Control = $TabContainer/BattleTab/BattlefieldContainer
+@onready var event_list_container: VBoxContainer = $TabContainer/BattleTab/EventListContainer
+
+var _placed_enemies: Array[Dictionary] = []
+
 
 func _ready() -> void:
 	_bind_signals()
@@ -73,6 +80,8 @@ func _apply_data_to_ui() -> void:
 	# 剧情行
 	_init_plot_tab(pre_battle_tab, _current_data.pre_battle_lines, _pre_battle_line_editors)
 	_init_plot_tab(post_battle_tab, _current_data.post_battle_lines, _post_battle_line_editors)
+	# 战斗配置
+	_init_battle_tab()
 
 
 func _on_save_pressed() -> void:
@@ -226,6 +235,159 @@ func _sync_plot_lines() -> void:
 	_current_data.post_battle_lines.clear()
 	for edit in _post_battle_line_editors:
 		_current_data.post_battle_lines.append(edit.text)
+
+
+# ========== 战斗配置 ==========
+
+func _init_battle_tab() -> void:
+	_populate_enemy_list()
+	_init_battlefield()
+	_init_event_list()
+
+
+func _populate_enemy_list() -> void:
+	if enemy_list_container == null:
+		return
+
+	for child in enemy_list_container.get_children():
+		child.queue_free()
+
+	var content := BATTLE_CONTENT.new()
+	var enemy_ids: Array[String] = content.get_all_enemy_ids()
+
+	for enemy_id in enemy_ids:
+		var enemy: Dictionary = content.get_unit(enemy_id)
+		if enemy.is_empty():
+			continue
+
+		var hbox := HBoxContainer.new()
+
+		var label := Label.new()
+		label.text = "%s (%s)" % [enemy.get("display_name", enemy_id), enemy.get("attack_mode", "melee")]
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+		var add_btn := Button.new()
+		add_btn.text = "+"
+		add_btn.custom_minimum_size.x = 30
+		add_btn.pressed.connect(_make_add_enemy_callback(enemy_id))
+
+		hbox.add_child(label)
+		hbox.add_child(add_btn)
+		enemy_list_container.add_child(hbox)
+
+	content.free()
+
+
+func _make_add_enemy_callback(enemy_id: String) -> Callable:
+	return func():
+		if _current_data == null:
+			return
+		_current_data.add_enemy_entry(enemy_id, "right_flank")
+		_refresh_placed_enemies()
+
+
+func _init_battlefield() -> void:
+	_placed_enemies.clear()
+	if battlefield_container:
+		_refresh_placed_enemies()
+
+
+func _init_event_list() -> void:
+	if event_list_container == null:
+		return
+
+	for child in event_list_container.get_children():
+		child.queue_free()
+
+	var add_btn := Button.new()
+	add_btn.text = "+ 添加事件"
+	add_btn.pressed.connect(_on_add_event)
+	event_list_container.add_child(add_btn)
+
+	if _current_data:
+		for i in range(_current_data.event_configs.size()):
+			_add_event_entry(i)
+
+
+func _add_event_entry(config_index: int) -> void:
+	if _current_data == null or event_list_container == null:
+		return
+
+	var config: Dictionary = _current_data.event_configs[config_index]
+
+	var hbox := HBoxContainer.new()
+
+	# Trigger preset dropdown
+	var trigger_select := OptionButton.new()
+	var presets := MISSION_DATA.TRIGGER_PRESETS.keys()
+	for preset in presets:
+		trigger_select.add_item(preset)
+	var current_preset: String = config.get("trigger_preset", "elapsed_15")
+	var idx := presets.find(current_preset)
+	if idx >= 0:
+		trigger_select.selected = idx
+	trigger_select.item_selected.connect(_make_event_trigger_callback(config_index))
+
+	# Spawn anchor dropdown
+	var anchor_select := OptionButton.new()
+	for anchor in MISSION_DATA.SPAWN_ANCHORS:
+		anchor_select.add_item(anchor)
+	var current_anchor: String = config.get("spawn_anchor", "right_flank")
+	idx = MISSION_DATA.SPAWN_ANCHORS.find(current_anchor)
+	if idx >= 0:
+		anchor_select.selected = idx
+	anchor_select.item_selected.connect(_make_event_anchor_callback(config_index))
+
+	# Delete button
+	var del_btn := Button.new()
+	del_btn.text = "×"
+	del_btn.custom_minimum_size.x = 30
+	del_btn.pressed.connect(_make_delete_event_callback(config_index))
+
+	hbox.add_child(trigger_select)
+	hbox.add_child(anchor_select)
+	hbox.add_child(del_btn)
+	event_list_container.add_child(hbox)
+
+
+func _make_event_trigger_callback(config_index: int) -> Callable:
+	return func(index: int):
+		if _current_data and config_index < _current_data.event_configs.size():
+			var presets := MISSION_DATA.TRIGGER_PRESETS.keys()
+			if index >= 0 and index < presets.size():
+				_current_data.event_configs[config_index]["trigger_preset"] = presets[index]
+
+
+func _make_event_anchor_callback(config_index: int) -> Callable:
+	return func(index: int):
+		if _current_data and config_index < _current_data.event_configs.size():
+			if index >= 0 and index < MISSION_DATA.SPAWN_ANCHORS.size():
+				_current_data.event_configs[config_index]["spawn_anchor"] = MISSION_DATA.SPAWN_ANCHORS[index]
+
+
+func _make_delete_event_callback(config_index: int) -> Callable:
+	return func():
+		if _current_data:
+			_current_data.remove_event_config(config_index)
+			_init_event_list()
+
+
+func _on_add_event() -> void:
+	if _current_data:
+		_current_data.add_event_config("evt_hunter_fiend_arrival", "elapsed_15", "right_flank")
+		_init_event_list()
+
+
+func _refresh_placed_enemies() -> void:
+	# Placeholder - in full implementation would update battlefield visual
+	# For now, just refresh the count display
+	pass
+
+
+func _sync_battle_config() -> void:
+	# Battle config syncs through _current_data direct manipulation
+	# No additional sync needed as edits go directly to _current_data
+	pass
 
 
 func _on_new_pressed() -> void:
