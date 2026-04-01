@@ -3,7 +3,7 @@ extends Control
 const MISSION_DATA := preload("res://scripts/data/mission_data.gd")
 const BATTLE_CONTENT := preload("res://autoload/battle_content.gd")
 
-var _current_data: MissionData
+var _current_data
 var _is_new_mission: bool = true
 
 @onready var tab_container: TabContainer = $TabContainer
