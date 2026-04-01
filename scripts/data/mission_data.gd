@@ -26,6 +26,11 @@ const SPAWN_ANCHORS := ["right_flank", "right_top", "right_bottom", "left_flank"
 @export var briefing: String = ""
 @export var hint: String = ""
 
+# 模块启用状态
+@export var has_pre_battle: bool = false
+@export var has_battle: bool = true
+@export var has_post_battle: bool = false
+
 # 剧情（逐行）
 @export var pre_battle_lines: Array[String] = []
 @export var post_battle_lines: Array[String] = []
@@ -45,6 +50,9 @@ func new_mission() -> void:
     mission_type = "主线"
     briefing = ""
     hint = ""
+    has_pre_battle = false
+    has_battle = true
+    has_post_battle = false
     pre_battle_lines = []
     post_battle_lines = []
     battle_id = ""

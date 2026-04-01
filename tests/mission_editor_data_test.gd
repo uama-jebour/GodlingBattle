@@ -10,6 +10,9 @@ func _init():
     data.new_mission()
     assert(data.mission_id != "", "mission_id should be set after new_mission")
     assert(data.mission_type == "主线", "default mission_type should be 主线")
+    assert(data.has_pre_battle == false, "has_pre_battle should default to false")
+    assert(data.has_battle == true, "has_battle should default to true")
+    assert(data.has_post_battle == false, "has_post_battle should default to false")
     print("Test 1 PASSED: MissionData.new_mission()")
 
     # Test 2: Enemy entries
@@ -66,6 +69,16 @@ func _init():
     assert(data2.event_configs.size() == 0, "invalid trigger_preset should be rejected")
     print("Test 8 PASSED: Invalid trigger_preset rejection")
 
+    # Test 9: Module flags persistence
+    var data3 := MISSION_DATA.new()
+    data3.new_mission()
+    data3.has_pre_battle = true
+    data3.has_post_battle = true
+    assert(data3.has_pre_battle == true, "has_pre_battle should be true")
+    assert(data3.has_battle == true, "has_battle should remain true")
+    assert(data3.has_post_battle == true, "has_post_battle should be true")
+    print("Test 9 PASSED: Module flags persistence")
+
     print("")
-    print("=== ALL 8 TESTS PASSED ===")
+    print("=== ALL 9 TESTS PASSED ===")
     quit(0)
