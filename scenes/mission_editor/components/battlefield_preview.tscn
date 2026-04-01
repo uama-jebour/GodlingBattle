@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://battlefield_preview_comp"]
+
+[ext_resource type="Script" path="res://scripts/mission_editor/components/battlefield_preview.gd" id="1"]
+
+[node name="BattlefieldPreview" type="Control"]
+custom_minimum_size = Vector2(300, 200)
+script = ExtResource("1")
+
+[node name="PreviewArea" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.15, 0.15, 0.2, 1)
