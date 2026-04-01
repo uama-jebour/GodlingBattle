@@ -58,6 +58,9 @@ func get_enemy_count() -> int:
 
 
 func add_enemy_entry(unit_id: String, spawn_anchor: String) -> void:
+    if not SPAWN_ANCHORS.has(spawn_anchor):
+        push_warning("MissionData: Invalid spawn_anchor '%s', expected one of %s" % [spawn_anchor, SPAWN_ANCHORS])
+        return
     enemy_entries.append({"unit_id": unit_id, "spawn_anchor": spawn_anchor})
 
 
@@ -67,6 +70,9 @@ func remove_enemy_entry(index: int) -> void:
 
 
 func add_event_config(event_id: String, trigger_preset: String, spawn_anchor: String) -> void:
+    if not TRIGGER_PRESETS.has(trigger_preset):
+        push_warning("MissionData: Invalid trigger_preset '%s', expected one of %s" % [trigger_preset, TRIGGER_PRESETS.keys()])
+        return
     event_configs.append({"event_id": event_id, "trigger_preset": trigger_preset, "spawn_anchor": spawn_anchor})
 
 
