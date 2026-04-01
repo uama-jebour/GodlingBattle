@@ -508,7 +508,7 @@ func _on_mission_name_changed(new_text: String) -> void:
 func load_mission(mission_id: String) -> void:
 	var path := "res://resources/missions/%s.tres" % mission_id
 	var res := load(path)
-	if res is MissionData:
+	if res != null and res.has_method("is_valid"):
 		_current_data = res
 		_is_new_mission = false
 		_apply_data_to_ui()
