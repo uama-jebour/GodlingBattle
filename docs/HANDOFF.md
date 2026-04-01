@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-`GodlingBattle` 已完成 Phase1-Phase5、Phase6、Phase7、Phase8、Phase9、Phase10、Phase11（Task1-Task2 完成）、Phase12（Task1 完成）、Phase13（Task1-Task4 完成）、Phase14（Task1-Task5 完成），并完成 Phase15（首轮可读性增强 + 战报中心可视化增强：关键事件彩色标签/阶段汇总卡片），当前主流程为：
+`GodlingBattle` 已完成 Phase1-Phase15、Phase16（任务编辑器 MVP），当前主流程为：
 
 `出战前准备（可操作） -> 自动观战（四象限 UI / 可暂停 / 倍速 / 战报联动） -> 结果结算（可再战/返回）`
 
@@ -24,6 +24,7 @@
 - Phase14（Observe 四象限战斗 UI）：已完成（Task1-Task5）
 - Phase15（Observe 可读性增强首轮）：已完成（Task1-Task5）
 - Phase15（Observe 战报中心可视化增强）：已完成（关键事件彩色标签 + 阶段汇总卡片）
+- Phase16（任务编辑器 MVP）：已完成
 
 > 文档唯一性：全局进度只在本文件维护；其他文档仅引用。规则见 [文档唯一性约定.md](./文档唯一性约定.md)。
 
@@ -39,7 +40,44 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
-## 本次改动（2026-04-01，Phase15 战报中心可视化增强 + 准备页滚动布局收口，当前工作区）
+## 本次改动（2026-04-01，任务编辑器 MVP，合并到 main）
+
+新增**任务编辑器**功能（Phase16 MVP）：
+
+- 任务编辑器入口：准备页新增"任务编辑器"按钮
+- 编辑器 Tab 结构：
+  - `战前剧情` - 逐行文本编辑器（行号/上移/下移/删除）
+  - `战斗` - 敌人列表 + 事件配置（触发条件/生成位置）
+  - `战后剧情` - 同战前剧情
+  - `任务面板` - 名称/类型/简报/提示/收益
+- 预设触发条件：elapsed_15/30/60、ally_hp_50/25、enemy_count_2
+- 预设生成锚点：right_flank/right_top/right_bottom、left_flank/left_top/left_bottom
+- 收益类型：金币/经验/道具（固定选项）
+- 数据持久化：`.tres` 资源文件，保存到 `resources/missions/`
+- AppRouter 集成：`goto_mission_editor(mission_id)` 方法
+
+涉及文件：
+
+- `scripts/data/mission_data.gd`（新增）
+- `scripts/mission_editor/mission_editor.gd`（新增）
+- `scenes/mission_editor/mission_editor.tscn`（新增）
+- `autoload/app_router.gd`（新增方法）
+- `scripts/prep/preparation_screen.gd`（新增按钮）
+- `scenes/prep/preparation_screen.tscn`（新增按钮）
+- `tests/mission_editor_data_test.gd`（新增）
+- `tests/mission_editor_smoke_test.gd`（新增）
+
+验证结果：
+
+- `tests/mission_editor_data_test.gd` 通过
+- `tests/mission_editor_smoke_test.gd` 通过
+- 场景可正常加载实例化
+
+已知问题：
+
+- `tests/observe_battlefield_solver_motion_fidelity_test.gd` 仍失败（Phase15 遗留）
+
+## 本次改动（2026-04-01，Phase15 战报中心可视化增强 + 准备页滚动布局收口）
 
 本轮完成了两条主线：
 
