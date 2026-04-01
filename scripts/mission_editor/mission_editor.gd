@@ -30,6 +30,12 @@ var _is_new_mission: bool = true
 var _pre_battle_line_editors: Array[LineEdit] = []
 var _post_battle_line_editors: Array[LineEdit] = []
 
+# Rewards
+@onready var rewards_container: VBoxContainer = $TabContainer/MissionPanelTab/RewardsContainer
+@onready var add_reward_btn: Button = $TabContainer/MissionPanelTab/AddRewardButton
+
+var _reward_editors: Array[HBoxContainer] = []
+
 # Battle tab
 @onready var enemy_list_container: VBoxContainer = $TabContainer/BattleTab/EnemyListContainer
 @onready var battlefield_container: Control = $TabContainer/BattleTab/BattlefieldContainer
@@ -82,6 +88,8 @@ func _apply_data_to_ui() -> void:
 	_init_plot_tab(post_battle_tab, _current_data.post_battle_lines, _post_battle_line_editors)
 	# 战斗配置
 	_init_battle_tab()
+	# 收益配置
+	_init_rewards_section()
 
 
 func _on_save_pressed() -> void:
@@ -120,6 +128,7 @@ func _pull_ui_to_data() -> void:
 	if hint_edit:
 		_current_data.hint = hint_edit.text
 	_sync_plot_lines()
+	_sync_rewards_config()
 
 
 # ========== 剧情行编辑器 ==========
@@ -386,6 +395,93 @@ func _refresh_placed_enemies() -> void:
 func _sync_battle_config() -> void:
 	# Battle config syncs through _current_data direct manipulation
 	# No additional sync needed as edits go directly to _current_data
+	pass
+
+
+# ========== 收益配置 ==========
+
+func _init_rewards_section() -> void:
+	if rewards_container == null:
+		return
+
+	for child in rewards_container.get_children():
+		child.queue_free()
+	_reward_editors.clear()
+
+	if _current_data:
+		for i in range(_current_data.rewards.size()):
+			_add_reward_entry(i)
+
+	if add_reward_btn and not add_reward_btn.pressed.is_connected(_on_add_reward):
+		add_reward_btn.pressed.connect(_on_add_reward)
+
+
+func _add_reward_entry(reward_index: int) -> void:
+	if _current_data == null or rewards_container == null:
+		return
+
+	var reward: Dictionary = _current_data.rewards[reward_index]
+
+	var hbox := HBoxContainer.new()
+
+	var type_select := OptionButton.new()
+	for rtype in MISSION_DATA.REWARD_TYPES:
+		type_select.add_item(rtype)
+	var type_idx := MISSION_DATA.REWARD_TYPES.find(reward.get("type", "金币"))
+	if type_idx >= 0:
+		type_select.selected = type_idx
+	type_select.item_selected.connect(_make_reward_type_callback(reward_index))
+
+	var value_edit := LineEdit.new()
+	value_edit.text = str(reward.get("value", 0))
+	value_edit.custom_minimum_size.x = 80
+	value_edit.text_changed.connect(_make_reward_value_callback(reward_index))
+
+	var del_btn := Button.new()
+	del_btn.text = "×"
+	del_btn.custom_minimum_size.x = 30
+	del_btn.pressed.connect(_make_delete_reward_callback(reward_index))
+
+	hbox.add_child(type_select)
+	hbox.add_child(value_edit)
+	hbox.add_child(del_btn)
+
+	rewards_container.add_child(hbox)
+	_reward_editors.append(hbox)
+
+
+func _make_reward_type_callback(reward_index: int) -> Callable:
+	return func(index: int):
+		if _current_data and reward_index < _current_data.rewards.size():
+			if index >= 0 and index < MISSION_DATA.REWARD_TYPES.size():
+				_current_data.rewards[reward_index]["type"] = MISSION_DATA.REWARD_TYPES[index]
+
+
+func _make_reward_value_callback(reward_index: int) -> Callable:
+	return func(new_text: String):
+		if _current_data and reward_index < _current_data.rewards.size():
+			var value := 0
+			if new_text.is_valid_int():
+				value = new_text.to_int()
+			_current_data.rewards[reward_index]["value"] = value
+
+
+func _make_delete_reward_callback(reward_index: int) -> Callable:
+	return func():
+		if _current_data:
+			_current_data.remove_reward(reward_index)
+			_init_rewards_section()
+
+
+func _on_add_reward() -> void:
+	if _current_data:
+		_current_data.add_reward("金币", 0)
+		_init_rewards_section()
+
+
+func _sync_rewards_config() -> void:
+	# Rewards are edited directly through _current_data.rewards
+	# No additional sync needed
 	pass
 
 
