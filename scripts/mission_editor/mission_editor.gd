@@ -148,17 +148,17 @@ func _add_plot_line(container: VBoxContainer, text: String, editors_ref: Array) 
 	var up_btn := Button.new()
 	up_btn.text = "↑"
 	up_btn.custom_minimum_size.x = 30
-	up_btn.pressed.connect(_make_move_line_callback(editors_ref, editors_ref.size(), -1))
+	up_btn.pressed.connect(_make_move_line_callback(container, editors_ref, edit, -1))
 
 	var down_btn := Button.new()
 	down_btn.text = "↓"
 	down_btn.custom_minimum_size.x = 30
-	down_btn.pressed.connect(_make_move_line_callback(editors_ref, editors_ref.size(), 1))
+	down_btn.pressed.connect(_make_move_line_callback(container, editors_ref, edit, 1))
 
 	var del_btn := Button.new()
 	del_btn.text = "×"
 	del_btn.custom_minimum_size.x = 30
-	del_btn.pressed.connect(_make_delete_line_callback(container, hbox, editors_ref, editors_ref.size()))
+	del_btn.pressed.connect(_make_delete_line_callback(container, hbox, editors_ref, edit))
 
 	hbox.add_child(line_num)
 	hbox.add_child(edit)
@@ -175,21 +175,47 @@ func _make_add_line_callback(container: VBoxContainer, editors_ref: Array) -> Ca
 		_add_plot_line(container, "", editors_ref)
 
 
-func _make_move_line_callback(editors_ref: Array, index: int, direction: int) -> Callable:
+func _make_move_line_callback(container: VBoxContainer, editors_ref: Array, edit: LineEdit, direction: int) -> Callable:
 	return func():
+		var index := editors_ref.find(edit)
+		if index < 0:
+			return
 		var new_idx := index + direction
 		if new_idx < 0 or new_idx >= editors_ref.size():
 			return
+
+		# Swap in array
 		var temp = editors_ref[index]
 		editors_ref[index] = editors_ref[new_idx]
 		editors_ref[new_idx] = temp
 
+		# Reorder container children
+		var hbox := edit.get_parent() as HBoxContainer
+		if hbox:
+			container.move_child(hbox, new_idx)
 
-func _make_delete_line_callback(container: VBoxContainer, hbox: HBoxContainer, editors_ref: Array, index: int) -> Callable:
+		# Update all line numbers
+		_refresh_line_numbers(container, editors_ref)
+
+
+func _make_delete_line_callback(container: VBoxContainer, hbox: HBoxContainer, editors_ref: Array, edit: LineEdit) -> Callable:
 	return func():
-		if index < editors_ref.size():
+		var index := editors_ref.find(edit)
+		if index >= 0:
 			editors_ref.remove_at(index)
 		hbox.queue_free()
+		_refresh_line_numbers(container, editors_ref)
+
+
+func _refresh_line_numbers(container: VBoxContainer, editors_ref: Array) -> void:
+	var line_num := 1
+	for edit in editors_ref:
+		var hbox := edit.get_parent() as HBoxContainer
+		if hbox and hbox.get_child_count() > 0:
+			var label := hbox.get_child(0) as Label
+			if label:
+				label.text = "%d." % line_num
+		line_num += 1
 
 
 func _sync_plot_lines() -> void:
