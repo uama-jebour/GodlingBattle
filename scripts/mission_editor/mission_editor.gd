@@ -23,6 +23,13 @@ var _is_new_mission: bool = true
 @onready var briefing_edit: TextEdit = $TabContainer/MissionPanelTab/BriefingEdit
 @onready var hint_edit: TextEdit = $TabContainer/MissionPanelTab/HintEdit
 
+# Plot line editors
+@onready var pre_battle_lines_container: VBoxContainer = $TabContainer/PreBattleTab/LinesContainer
+@onready var post_battle_lines_container: VBoxContainer = $TabContainer/PostBattleTab/LinesContainer
+
+var _pre_battle_line_editors: Array[LineEdit] = []
+var _post_battle_line_editors: Array[LineEdit] = []
+
 
 func _ready() -> void:
 	_bind_signals()
@@ -63,6 +70,9 @@ func _apply_data_to_ui() -> void:
 		briefing_edit.text = _current_data.briefing
 	if hint_edit:
 		hint_edit.text = _current_data.hint
+	# 剧情行
+	_init_plot_tab(pre_battle_tab, _current_data.pre_battle_lines, _pre_battle_line_editors)
+	_init_plot_tab(post_battle_tab, _current_data.post_battle_lines, _post_battle_line_editors)
 
 
 func _on_save_pressed() -> void:
@@ -100,6 +110,96 @@ func _pull_ui_to_data() -> void:
 		_current_data.briefing = briefing_edit.text
 	if hint_edit:
 		_current_data.hint = hint_edit.text
+	_sync_plot_lines()
+
+
+# ========== 剧情行编辑器 ==========
+
+func _init_plot_tab(tab: Control, lines: Array[String], editors_ref: Array) -> void:
+	var container: VBoxContainer = tab.get_node_or_null("LinesContainer")
+	if container == null:
+		return
+
+	for child in container.get_children():
+		child.queue_free()
+	editors_ref.clear()
+
+	for i in range(lines.size()):
+		_add_plot_line(container, lines[i], editors_ref)
+
+	var add_btn := Button.new()
+	add_btn.text = "+ 添加行"
+	add_btn.pressed.connect(_make_add_line_callback(container, editors_ref))
+	container.add_child(add_btn)
+
+
+func _add_plot_line(container: VBoxContainer, text: String, editors_ref: Array) -> void:
+	var hbox := HBoxContainer.new()
+	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var line_num := Label.new()
+	line_num.text = "%d." % (editors_ref.size() + 1)
+	line_num.custom_minimum_size.x = 30
+
+	var edit := LineEdit.new()
+	edit.text = text
+	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var up_btn := Button.new()
+	up_btn.text = "↑"
+	up_btn.custom_minimum_size.x = 30
+	up_btn.pressed.connect(_make_move_line_callback(editors_ref, editors_ref.size(), -1))
+
+	var down_btn := Button.new()
+	down_btn.text = "↓"
+	down_btn.custom_minimum_size.x = 30
+	down_btn.pressed.connect(_make_move_line_callback(editors_ref, editors_ref.size(), 1))
+
+	var del_btn := Button.new()
+	del_btn.text = "×"
+	del_btn.custom_minimum_size.x = 30
+	del_btn.pressed.connect(_make_delete_line_callback(container, hbox, editors_ref, editors_ref.size()))
+
+	hbox.add_child(line_num)
+	hbox.add_child(edit)
+	hbox.add_child(up_btn)
+	hbox.add_child(down_btn)
+	hbox.add_child(del_btn)
+
+	container.add_child(hbox)
+	editors_ref.append(edit)
+
+
+func _make_add_line_callback(container: VBoxContainer, editors_ref: Array) -> Callable:
+	return func():
+		_add_plot_line(container, "", editors_ref)
+
+
+func _make_move_line_callback(editors_ref: Array, index: int, direction: int) -> Callable:
+	return func():
+		var new_idx := index + direction
+		if new_idx < 0 or new_idx >= editors_ref.size():
+			return
+		var temp = editors_ref[index]
+		editors_ref[index] = editors_ref[new_idx]
+		editors_ref[new_idx] = temp
+
+
+func _make_delete_line_callback(container: VBoxContainer, hbox: HBoxContainer, editors_ref: Array, index: int) -> Callable:
+	return func():
+		if index < editors_ref.size():
+			editors_ref.remove_at(index)
+		hbox.queue_free()
+
+
+func _sync_plot_lines() -> void:
+	_current_data.pre_battle_lines.clear()
+	for edit in _pre_battle_line_editors:
+		_current_data.pre_battle_lines.append(edit.text)
+
+	_current_data.post_battle_lines.clear()
+	for edit in _post_battle_line_editors:
+		_current_data.post_battle_lines.append(edit.text)
 
 
 func _on_new_pressed() -> void:
