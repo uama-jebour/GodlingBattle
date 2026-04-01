@@ -252,11 +252,12 @@ func _populate_enemy_list() -> void:
 	for child in enemy_list_container.get_children():
 		child.queue_free()
 
-	var content := BATTLE_CONTENT.new()
-	var enemy_ids: Array[String] = content.get_all_enemy_ids()
+	# Known enemy unit IDs (MVP - hardcoded from battle_content.gd)
+	var enemy_ids := ["enemy_wandering_demon", "enemy_animated_machine", "enemy_hunter_fiend"]
 
 	for enemy_id in enemy_ids:
-		var enemy: Dictionary = content.get_unit(enemy_id)
+		# Use BattleContent autoload singleton directly
+		var enemy: Dictionary = BattleContent.get_unit(enemy_id)
 		if enemy.is_empty():
 			continue
 
@@ -274,8 +275,6 @@ func _populate_enemy_list() -> void:
 		hbox.add_child(label)
 		hbox.add_child(add_btn)
 		enemy_list_container.add_child(hbox)
-
-	content.free()
 
 
 func _make_add_enemy_callback(enemy_id: String) -> Callable:
