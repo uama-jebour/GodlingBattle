@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://mission_editor_scene"]
+
+[ext_resource type="Script" path="res://scripts/mission_editor/mission_editor.gd" id="1"]
+
+[node name="MissionEditor" type="Control"]
+script = ExtResource("1")

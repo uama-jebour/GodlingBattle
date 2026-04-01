@@ -3,6 +3,7 @@ extends Node
 const PREP_SCENE := preload("res://scenes/prep/preparation_screen.tscn")
 const OBSERVE_SCENE := preload("res://scenes/observe/observe_screen.tscn")
 const RESULT_SCENE := preload("res://scenes/result/result_screen.tscn")
+const MISSION_EDITOR_SCENE := preload("res://scenes/mission_editor/mission_editor.tscn")
 
 var _host: Control
 
