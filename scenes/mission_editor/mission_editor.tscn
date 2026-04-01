@@ -5,37 +5,37 @@
 [node name="MissionEditor" type="Control" parent="."]
 script = ExtResource("1")
 
-[node name="TabContainer" type="TabContainer" parent="."]
+[node name="TabContainer" type="TabContainer" parent="MissionEditor"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 32.0
 offset_bottom = -50.0
 
-[node name="PreBattleTab" type="Control" parent="TabContainer"]
+[node name="PreBattleTab" type="Control" parent="MissionEditor/TabContainer"]
 tab_index = 0
 
-[node name="LinesContainer" type="VBoxContainer" parent="TabContainer/PreBattleTab"]
+[node name="LinesContainer" type="VBoxContainer" parent="MissionEditor/TabContainer/PreBattleTab"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="BattleTab" type="Control" parent="TabContainer"]
+[node name="BattleTab" type="Control" parent="MissionEditor/TabContainer"]
 tab_index = 1
 
-[node name="EnemyListContainer" type="VBoxContainer" parent="TabContainer/BattleTab"]
+[node name="EnemyListContainer" type="VBoxContainer" parent="MissionEditor/TabContainer/BattleTab"]
 anchors_preset = 10
 anchor_left = 1.0
 anchor_right = 1.0
 offset_right = 200.0
 offset_bottom = 200.0
 
-[node name="BattlefieldContainer" type="Control" parent="TabContainer/BattleTab"]
+[node name="BattlefieldContainer" type="Control" parent="MissionEditor/TabContainer/BattleTab"]
 offset_left = 220.0
 offset_right = 600.0
 offset_bottom = 300.0
 
-[node name="EventListContainer" type="VBoxContainer" parent="TabContainer/BattleTab"]
+[node name="EventListContainer" type="VBoxContainer" parent="MissionEditor/TabContainer/BattleTab"]
 anchors_preset = 12
 anchor_left = 1.0
 anchor_top = 1.0
@@ -43,62 +43,62 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 320.0
 
-[node name="PostBattleTab" type="Control" parent="TabContainer"]
+[node name="PostBattleTab" type="Control" parent="MissionEditor/TabContainer"]
 tab_index = 2
 
-[node name="LinesContainer" type="VBoxContainer" parent="TabContainer/PostBattleTab"]
+[node name="LinesContainer" type="VBoxContainer" parent="MissionEditor/TabContainer/PostBattleTab"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="MissionPanelTab" type="Control" parent="TabContainer"]
+[node name="MissionPanelTab" type="Control" parent="MissionEditor/TabContainer"]
 tab_index = 3
 
-[node name="MissionNameEdit" type="LineEdit" parent="TabContainer/MissionPanelTab"]
+[node name="MissionNameEdit" type="LineEdit" parent="MissionEditor/TabContainer/MissionPanelTab"]
 offset_left = 120.0
 offset_top = 10.0
 offset_right = 420.0
 
-[node name="MissionTypeSelect" type="OptionButton" parent="TabContainer/MissionPanelTab"]
+[node name="MissionTypeSelect" type="OptionButton" parent="MissionEditor/TabContainer/MissionPanelTab"]
 offset_left = 120.0
 offset_top = 50.0
 offset_right = 270.0
 
-[node name="BriefingEdit" type="TextEdit" parent="TabContainer/MissionPanelTab"]
+[node name="BriefingEdit" type="TextEdit" parent="MissionEditor/TabContainer/MissionPanelTab"]
 offset_left = 120.0
 offset_top = 90.0
 offset_right = 520.0
 offset_bottom = 220.0
 
-[node name="HintEdit" type="TextEdit" parent="TabContainer/MissionPanelTab"]
+[node name="HintEdit" type="TextEdit" parent="MissionEditor/TabContainer/MissionPanelTab"]
 offset_left = 120.0
 offset_top = 230.0
 offset_right = 520.0
 offset_bottom = 360.0
 
-[node name="RewardsContainer" type="VBoxContainer" parent="TabContainer/MissionPanelTab"]
+[node name="RewardsContainer" type="VBoxContainer" parent="MissionEditor/TabContainer/MissionPanelTab"]
 offset_left = 120.0
 offset_top = 370.0
 offset_right = 400.0
 
-[node name="AddRewardButton" type="Button" parent="TabContainer/MissionPanelTab"]
+[node name="AddRewardButton" type="Button" parent="MissionEditor/TabContainer/MissionPanelTab"]
 offset_left = 120.0
 offset_top = 370.0
 offset_right = 220.0
 text = "+ 添加收益"
 
-[node name="BottomBar" type="HBoxContainer" parent="."]
+[node name="BottomBar" type="HBoxContainer" parent="MissionEditor"]
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -50.0
 
-[node name="SaveButton" type="Button" parent="BottomBar"]
+[node name="SaveButton" type="Button" parent="MissionEditor/BottomBar"]
 text = "保存"
 
-[node name="NewButton" type="Button" parent="BottomBar"]
+[node name="NewButton" type="Button" parent="MissionEditor/BottomBar"]
 text = "新建"
 
-[node name="BackButton" type="Button" parent="BottomBar"]
+[node name="BackButton" type="Button" parent="MissionEditor/BottomBar"]
 text = "返回准备页"
