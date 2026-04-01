@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://event_list_comp"]
+
+[ext_resource type="Script" path="res://scripts/mission_editor/components/event_list.gd" id="1"]
+
+[node name="EventList" type="VBoxContainer"]
+script = ExtResource("1")
+
+[node name="EventsContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="AddButton" type="Button" parent="."]
+layout_mode = 2
+text = "+ 添加事件"
