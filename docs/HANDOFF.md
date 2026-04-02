@@ -40,6 +40,58 @@
 1. 本文件 `当前状态` + 最新 `本次改动`
 2. [../AGENTS.MD](../AGENTS.MD)
 
+## 本次改动（2026-04-02，任务编辑器组件化重构，当前工作区）
+
+对任务编辑器进行全面组件化重构，提升可维护性：
+
+- 组件化架构：
+  - `TaskPanel` - 任务基础信息（名称/类型/简报/提示/收益）
+  - `StoryEditor` - 逐行剧情编辑器（战前/战后复用）
+  - `BattleEditor` - 战斗配置容器
+  - `BattlefieldPreview` - 拖拽式敌人放置区域
+  - `EventList` - 事件触发配置列表
+  - `RewardEditor` - 收益类型/数值编辑
+- 模块控制逻辑：
+  - 三个 CheckBox 控制：战前剧情/战斗/战后剧情
+  - 约束规则：不能同时选择两个剧情而不选战斗；取消战斗自动取消两个剧情
+  - 动态显示/隐藏各编辑区域
+- 数据结构扩展：
+  - `MissionData` 新增 `has_pre_battle`、`has_battle`、`has_post_battle` 模块开关
+  - 新增 `pre_battle_lines`、`post_battle_lines` 剧情文本数组
+
+涉及文件：
+
+- `scripts/mission_editor/components/task_panel.gd`（新增）
+- `scripts/mission_editor/components/story_editor.gd`（新增）
+- `scripts/mission_editor/components/battle_editor.gd`（新增）
+- `scripts/mission_editor/components/battlefield_preview.gd`（新增）
+- `scripts/mission_editor/components/event_list.gd`（新增）
+- `scripts/mission_editor/components/reward_editor.gd`（新增）
+- `scripts/mission_editor/components/enemy_drag_item.gd`（新增）
+- `scripts/mission_editor/components/placed_enemy_icon.gd`（新增）
+- `scenes/mission_editor/components/*.tscn`（新增）
+- `scripts/mission_editor/mission_editor.gd`（重构）
+- `scripts/data/mission_data.gd`（扩展）
+- `tests/mission_editor_*_test.gd`（新增/更新）
+
+验证结果：
+
+- `tests/mission_editor_smoke_test.gd` 通过
+- `tests/mission_editor_data_test.gd` 通过
+- `tests/mission_editor_battle_editor_test.gd` 通过
+- `tests/mission_editor_story_editor_test.gd` 通过
+- `tests/mission_editor_event_list_test.gd` 通过
+- `tests/mission_editor_task_panel_test.gd` 通过
+- `tests/mission_editor_reward_editor_test.gd` 通过
+- `tests/mission_editor_battlefield_preview_test.gd` 通过
+
+修复问题：
+
+- GDScript 类型推断错误（`:=` 改为显式类型声明）
+- UID preload 失败（改用文件路径）
+- @onready 节点在单元测试中为空（增加 fallback 返回内部数据）
+- 场景文件 ExtResource 引用格式错误
+
 ## 本次改动（2026-04-01，任务编辑器 MVP，合并到 main）
 
 新增**任务编辑器**功能（Phase16 MVP）：

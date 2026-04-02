@@ -33,11 +33,18 @@ func set_config(p_enemy_entries: Array[Dictionary], p_event_configs: Array[Dicti
 
 func get_config() -> Dictionary:
 	var result_enemy: Array[Dictionary] = []
+	var result_events: Array[Dictionary] = []
+
 	if battlefield_preview and battlefield_preview.has_method("get_enemies"):
 		result_enemy = battlefield_preview.get_enemies()
-	var result_events: Array[Dictionary] = []
+	else:
+		result_enemy = _enemy_entries.duplicate(true)
+
 	if event_list and event_list.has_method("get_events"):
 		result_events = event_list.get_events()
+	else:
+		result_events = _event_configs.duplicate(true)
+
 	return {
 		"enemy_entries": result_enemy,
 		"event_configs": result_events

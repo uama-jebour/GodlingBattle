@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/mission_editor/components/battle_editor.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://battlefield_preview_comp" path="res://scenes/mission_editor/components/battlefield_preview.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://event_list_comp" path="res://scenes/mission_editor/components/event_list.tscn" id="3"]
 
 [node name="BattleEditor" type="VBoxContainer"]
 script = ExtResource("1")
@@ -31,5 +32,5 @@ layout_mode = 2
 layout_mode = 2
 text = "事件配置"
 
-[node name="EventList" parent="EventListSection" instance=ExtResource("uid://event_list_comp")]
+[node name="EventList" parent="EventListSection" instance=ExtResource("3")]
 layout_mode = 2
