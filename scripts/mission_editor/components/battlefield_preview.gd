@@ -12,7 +12,6 @@ var _anchor_positions: Dictionary = {}
 
 
 func _ready() -> void:
-	# Defer anchor calculation until after the node is in the tree
 	call_deferred("_calculate_anchor_positions")
 
 
@@ -23,7 +22,6 @@ func _calculate_anchor_positions() -> void:
 	var w := rect.size.x
 	var h := rect.size.y
 
-	# Enemy spawn anchors (right side for enemies, left side for allies)
 	_anchor_positions = {
 		"right_flank": Vector2(w * 0.85, h * 0.5),
 		"right_top": Vector2(w * 0.85, h * 0.25),
@@ -33,7 +31,6 @@ func _calculate_anchor_positions() -> void:
 		"left_bottom": Vector2(w * 0.15, h * 0.75)
 	}
 
-	# Rebuild icons after calculating positions
 	_rebuild_icons()
 
 
@@ -52,7 +49,7 @@ func _rebuild_icons() -> void:
 		return
 
 	for child in preview_area.get_children():
-		if child is PlacedEnemyIcon:
+		if child.get_script() and child.get_script().get_path().find("placed_enemy_icon") >= 0:
 			child.queue_free()
 
 	for enemy in _placed_enemies:
@@ -63,12 +60,15 @@ func _create_icon(enemy: Dictionary) -> void:
 	if preview_area == null:
 		return
 
-	var icon: PlacedEnemyIcon = PLACED_ENEMY_ICON.instantiate()
+	var icon: Control = PLACED_ENEMY_ICON.instantiate()
 	var unit_id: String = enemy.get("unit_id", "")
 	var spawn_anchor: String = enemy.get("spawn_anchor", "right_flank")
 	var display_name: String = enemy.get("display_name", unit_id)
-	icon.setup(unit_id, spawn_anchor, display_name)
-	icon.delete_requested.connect(_on_delete_requested)
+
+	if icon.has_method("setup"):
+		icon.setup(unit_id, spawn_anchor, display_name)
+	if icon.has_signal("delete_requested"):
+		icon.delete_requested.connect(_on_delete_requested)
 
 	var anchor: String = enemy.get("spawn_anchor", "right_flank")
 	var pos: Vector2 = _anchor_positions.get(anchor, Vector2(100, 100))
@@ -77,10 +77,13 @@ func _create_icon(enemy: Dictionary) -> void:
 	preview_area.add_child(icon)
 
 
-func _on_delete_requested(icon: PlacedEnemyIcon) -> void:
+func _on_delete_requested(icon: Control) -> void:
 	var index := -1
+	var icon_unit_id: String = icon.get("unit_id") if icon.get("unit_id") else ""
+	var icon_spawn_anchor: String = icon.get("spawn_anchor") if icon.get("spawn_anchor") else ""
+
 	for i in range(_placed_enemies.size()):
-		if _placed_enemies[i].get("unit_id") == icon.unit_id and _placed_enemies[i].get("spawn_anchor") == icon.spawn_anchor:
+		if _placed_enemies[i].get("unit_id") == icon_unit_id and _placed_enemies[i].get("spawn_anchor") == icon_spawn_anchor:
 			index = i
 			break
 	if index >= 0:
