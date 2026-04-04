@@ -60,3 +60,13 @@
   - `BENCH_WRITE_BASELINE=1 ./tools/run_benchmark_gate.sh`
 
 详细规则见：[docs/benchmark-baseline-policy.md](docs/benchmark-baseline-policy.md)
+
+## Continuous Security Guardrails
+
+- This repo runs `gitleaks` in GitHub Actions on push/PR/schedule.
+- Local pre-commit secret scan is available in `.githooks/pre-commit`.
+- Enable hooks locally:
+
+```bash
+git config core.hooksPath .githooks
+```

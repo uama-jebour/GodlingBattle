@@ -7,3 +7,10 @@ fi
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 "${ROOT_DIR}/tools/run_benchmark_gate.sh"
+
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "[pre-commit] Running gitleaks staged scan..."
+  gitleaks git --staged --no-banner --redact --exit-code 1
+else
+  echo "[pre-commit] gitleaks not found, skipping secret scan."
+fi

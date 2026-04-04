@@ -6,3 +6,10 @@ export_presets.cfg
 worktrees/
 tests/*.gd.uid
 tests/**/*.gd.uid
+
+# Local secrets
+.env
+.env.*
+!.env.example
+!.env.server.example
+.runtime/
